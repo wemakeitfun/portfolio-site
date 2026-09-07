@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "portfolio-site",
+      "runtimeExecutable": "/Users/kahncept/ClaudeProjects/portfolio-site/.tools/run-dev.sh",
+      "runtimeArgs": [],
+      "port": 3000
+    }
+  ]
+}
