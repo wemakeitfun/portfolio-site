@@ -7,8 +7,10 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const links = [
   { href: "/", label: "Home" },
+  { href: "/ads", label: "Ads" },
+  { href: "/art", label: "Art" },
+  { href: "/artificial", label: "Artificial" },
   { href: "/about", label: "About" },
-  { href: "/work", label: "Work" },
 ];
 
 function SwapText({ children }: { children: string }) {
@@ -39,7 +41,7 @@ export default function Nav() {
           className="font-display text-2xl tracking-wide leading-none"
           onClick={() => setOpen(false)}
         >
-          ARC<span className="text-accent">*</span>
+          AK<span className="text-accent">*</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 font-mono text-xs uppercase tracking-widest text-fg-muted">

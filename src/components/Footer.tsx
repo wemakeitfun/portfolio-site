@@ -2,15 +2,14 @@ import Link from "next/link";
 
 const nav = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
-  { href: "/work", label: "Work" },
+  { href: "/ads", label: "Ads" },
+  { href: "/art", label: "Art" },
+  { href: "/artificial", label: "Artificial" },
 ];
 
 const socials = [
-  { href: "https://x.com", label: "X" },
-  { href: "https://linkedin.com", label: "LinkedIn" },
-  { href: "https://instagram.com", label: "Instagram" },
-  { href: "https://dribbble.com", label: "Dribbble" },
+  { href: "https://instagram.com/kahncept", label: "Instagram" },
+  { href: "https://linkedin.com/in/kahncept", label: "LinkedIn" },
 ];
 
 export default function Footer() {
@@ -81,8 +80,8 @@ export default function Footer() {
       </div>
 
       <div className="mt-16 flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-8 border-t border-border font-mono text-xs uppercase tracking-widest text-fg-muted">
-        <span>© {year} Arc Studio</span>
-        <span>Built with Next.js &amp; Framer Motion</span>
+        <span>© {year} Adam Kahn / Kahncept</span>
+        <span>Built with Claude Code</span>
       </div>
     </footer>
   );

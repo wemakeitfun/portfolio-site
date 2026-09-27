@@ -8,13 +8,13 @@ import ProjectGallery from "@/components/ProjectGallery";
 export const revalidate = 60;
 
 export async function generateStaticParams() {
-  return (await getSlugs("work")).map((slug) => ({ slug }));
+  return (await getSlugs("art")).map((slug) => ({ slug }));
 }
 
-export default async function ProjectPage(props: PageProps<"/work/[slug]">) {
+export default async function ArtProjectPage(props: PageProps<"/art/[slug]">) {
   const { slug } = await props.params;
   const project = await getProject(slug);
-  if (!project || project.section !== "work") notFound();
+  if (!project || project.section !== "art") notFound();
 
   const next = await getNextProject(project);
 
@@ -22,10 +22,10 @@ export default async function ProjectPage(props: PageProps<"/work/[slug]">) {
     <div className="pt-32">
       <section className="px-6 md:px-10 pb-10">
         <Link
-          href="/work"
+          href="/art"
           className="font-mono text-xs uppercase tracking-widest text-fg-muted hover:text-fg transition-colors"
         >
-          ← Back to work
+          ← Back to art
         </Link>
 
         <div className="mt-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -85,7 +85,7 @@ export default async function ProjectPage(props: PageProps<"/work/[slug]">) {
 
       {next && (
         <section className="border-t border-border px-6 md:px-10 py-16 md:py-20">
-          <Link href={`/work/${next.slug}`} className="group block">
+          <Link href={`/art/${next.slug}`} className="group block">
             <p className="font-mono text-xs uppercase tracking-widest text-fg-muted mb-3">
               Next project
             </p>

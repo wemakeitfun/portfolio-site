@@ -9,6 +9,17 @@
   --border: rgba(243, 242, 236, 0.12);
 }
 
+/* Light theme for the Art section — set on <html> (see components/RouteTheme.tsx).
+   The lime accent is too pale to read on white, so it's swapped for a darker olive here. */
+:root.theme-light {
+  --bg: #ffffff;
+  --bg-elevated: #f2f1ec;
+  --fg: #0a0a0b;
+  --fg-muted: #5f5e58;
+  --accent: #6b8500;
+  --border: rgba(10, 10, 11, 0.12);
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-bg-elevated: var(--bg-elevated);
@@ -28,6 +39,10 @@
 html {
   background: var(--bg);
   color-scheme: dark;
+}
+
+html.theme-light {
+  color-scheme: light;
 }
 
 body {
@@ -66,6 +81,18 @@ body {
   to {
     transform: translateX(-50%);
   }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {

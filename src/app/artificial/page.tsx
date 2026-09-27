@@ -4,27 +4,26 @@ import WorkGrid from "@/components/WorkGrid";
 // New uploads show up within a minute of publishing.
 export const revalidate = 60;
 
-export default function WorkPage() {
+export default function ArtificialPage() {
   return (
     <div className="pt-32">
       <section className="px-6 md:px-10 pb-16 md:pb-24">
         <p className="font-mono text-xs uppercase tracking-widest text-accent mb-4">
-          Work
+          Artificial
         </p>
         <RevealHeading
           as="h1"
           className="font-display text-[13vw] md:text-[7vw] leading-[0.92] tracking-tight"
         >
-          Selected projects
+          AI-assisted work
         </RevealHeading>
         <p className="mt-6 max-w-md text-fg-muted">
-          A handful of the products, brands, and interfaces we&apos;ve shipped
-          over the last few years.
+          Pieces made with AI tools in the loop.
         </p>
       </section>
 
       <section className="px-6 md:px-10 pb-24 md:pb-32">
-        <WorkGrid />
+        <WorkGrid section="artificial" />
       </section>
     </div>
   );

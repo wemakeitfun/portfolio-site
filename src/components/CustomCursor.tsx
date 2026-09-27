@@ -37,7 +37,11 @@ export default function CustomCursor() {
       <motion.div
         animate={{ scale: hovering ? 2.6 : 1 }}
         transition={{ type: "spring", stiffness: 400, damping: 30 }}
-        className="h-3 w-3 rounded-full bg-fg"
+        // Deliberately not bg-fg: mix-blend-difference needs a color that stays
+        // near-white regardless of theme so it inverts consistently against both
+        // the dark site and the light Art section — a themed color would go dark
+        // on light pages and nearly disappear against a white background.
+        className="h-3 w-3 rounded-full bg-[#f3f2ec]"
       />
     </motion.div>
   );
