@@ -67,7 +67,7 @@ export default function Nav() {
 
         <div className="flex items-center gap-4">
           <a
-            href="mailto:hello@arcstudio.example"
+            href="mailto:kahncept@me.com"
             className="group relative hidden md:inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 font-mono text-xs uppercase tracking-widest overflow-hidden"
           >
             <span className="relative z-10 transition-colors duration-300 group-hover:text-bg">
@@ -106,7 +106,7 @@ export default function Nav() {
                   {l.label}
                 </Link>
               ))}
-              <a href="mailto:hello@arcstudio.example" className="text-accent">
+              <a href="mailto:kahncept@me.com" className="text-accent">
                 Let&apos;s Talk
               </a>
             </nav>

@@ -22,7 +22,7 @@ export default function Footer() {
           Have a project in mind?
         </p>
         <a
-          href="mailto:hello@arcstudio.example"
+          href="mailto:kahncept@me.com"
           className="group font-display text-[15vw] md:text-[9vw] leading-[0.9] tracking-tight hover:text-accent transition-colors"
         >
           Let&apos;s talk
