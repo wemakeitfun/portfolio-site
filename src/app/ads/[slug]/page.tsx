@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getNextProject, getProject, getSlugs } from "@/lib/portfolio";
 import RevealHeading from "@/components/RevealHeading";
 import ProjectGallery from "@/components/ProjectGallery";
+import ArrowUpRightIcon from "@/components/ArrowUpRightIcon";
 
 // New uploads show up within a minute of publishing.
 export const revalidate = 60;
@@ -94,7 +95,7 @@ export default async function AdPage(props: PageProps<"/ads/[slug]">) {
                 {next.title}
               </h3>
               <span className="h-12 w-12 md:h-16 md:w-16 shrink-0 rounded-full border border-accent bg-accent text-bg flex items-center justify-center transition-transform duration-300 group-hover:rotate-45">
-                ↗
+                <ArrowUpRightIcon className="h-5 w-5 md:h-6 md:w-6" />
               </span>
             </div>
           </Link>

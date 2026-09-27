@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import type { ProjectSummary } from "@/lib/portfolio";
 import ProjectMedia from "./ProjectMedia";
+import ArrowUpRightIcon from "./ArrowUpRightIcon";
 
 export default function ProjectCard({
   project,
@@ -51,7 +52,7 @@ export default function ProjectCard({
           </div>
 
           <div className="absolute top-5 right-5 h-9 w-9 rounded-full border border-accent bg-accent text-bg flex items-center justify-center transition-transform duration-300 group-hover:rotate-45">
-            ↗
+            <ArrowUpRightIcon className="h-4 w-4" />
           </div>
         </div>
 

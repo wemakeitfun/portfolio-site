@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ArrowUpRightIcon from "./ArrowUpRightIcon";
 
 const nav = [
   { href: "/", label: "Home" },
@@ -27,7 +28,7 @@ export default function Footer() {
         >
           Let&apos;s talk
           <span className="inline-block ml-4 md:ml-6 align-middle transition-transform duration-300 group-hover:translate-x-3 group-hover:-translate-y-3">
-            ↗
+            <ArrowUpRightIcon className="inline-block h-10 w-10 md:h-16 md:w-16" />
           </span>
         </a>
       </div>
