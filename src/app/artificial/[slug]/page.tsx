@@ -93,7 +93,7 @@ export default async function ArtificialProjectPage(props: PageProps<"/artificia
               <h3 className="font-display text-4xl md:text-6xl tracking-wide transition-colors group-hover:text-accent">
                 {next.title}
               </h3>
-              <span className="h-12 w-12 md:h-16 md:w-16 shrink-0 rounded-full border border-border flex items-center justify-center transition-all duration-300 group-hover:bg-accent group-hover:border-accent group-hover:text-bg group-hover:rotate-45">
+              <span className="h-12 w-12 md:h-16 md:w-16 shrink-0 rounded-full border border-accent bg-accent text-bg flex items-center justify-center transition-transform duration-300 group-hover:rotate-45">
                 ↗
               </span>
             </div>

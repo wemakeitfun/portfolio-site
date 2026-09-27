@@ -50,7 +50,7 @@ export default function ProjectCard({
             {String(index + 1).padStart(2, "0")}
           </div>
 
-          <div className="absolute top-5 right-5 h-9 w-9 rounded-full border border-border bg-bg/40 backdrop-blur-sm flex items-center justify-center transition-all duration-300 group-hover:bg-accent group-hover:border-accent group-hover:text-bg group-hover:rotate-45">
+          <div className="absolute top-5 right-5 h-9 w-9 rounded-full border border-accent bg-accent text-bg flex items-center justify-center transition-transform duration-300 group-hover:rotate-45">
             ↗
           </div>
         </div>
