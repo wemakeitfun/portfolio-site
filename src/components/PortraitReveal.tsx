@@ -13,11 +13,16 @@ export default function PortraitReveal({
   reveal,
   alt,
   caption,
+  captionClassName = "font-mono text-xs uppercase tracking-widest text-fg",
+  overlayText,
 }: {
   base: string;
   reveal: string;
   alt: string;
   caption?: string;
+  captionClassName?: string;
+  /** Baked into the photo itself (centered), so smearing it fades the text away to reveal the X-ray beneath. */
+  overlayText?: { value: string; color?: string };
 }) {
   const rootRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -30,8 +35,23 @@ export default function PortraitReveal({
 
     const abort = new AbortController();
     let smear: InkSmear | null = null;
+    const theme = getComputedStyle(document.documentElement);
 
-    createInkSmear(canvas, { image: { base, reveal, focusY: 0.25 }, signal: abort.signal }).then((s) => {
+    createInkSmear(canvas, {
+      image: {
+        base,
+        reveal,
+        focusY: 0.25,
+        text: overlayText
+          ? {
+              value: overlayText.value,
+              font: theme.getPropertyValue("--font-bebas").trim() || "sans-serif",
+              color: overlayText.color || theme.getPropertyValue("--accent").trim() || "#d7ff3f",
+            }
+          : undefined,
+      },
+      signal: abort.signal,
+    }).then((s) => {
       if (abort.signal.aborted) return s?.destroy();
       smear = s;
       if (s) root.dataset.ready = "true";
@@ -42,7 +62,8 @@ export default function PortraitReveal({
       smear?.destroy();
       delete root.dataset.ready;
     };
-  }, [base, reveal]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on primitives, not the object identity
+  }, [base, reveal, overlayText?.value, overlayText?.color]);
 
   return (
     <section ref={rootRef} className="group relative h-[85svh] min-h-[420px] w-full overflow-hidden bg-bg">
@@ -53,9 +74,18 @@ export default function PortraitReveal({
         aria-hidden
         className="invisible absolute inset-0 h-full w-full touch-pan-y group-data-[ready=true]:visible"
       />
+      {/* Real text for screen readers and the no-WebGL/reduced-motion fallback; hidden once the canvas takes over. */}
+      {overlayText && (
+        <p
+          className="absolute inset-0 flex items-center justify-center px-6 text-center font-display text-[12vw] tracking-wide sm:text-6xl group-data-[ready=true]:sr-only"
+          style={{ color: overlayText.color || "var(--accent)" }}
+        >
+          {overlayText.value}
+        </p>
+      )}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-bg to-transparent" />
       {caption && (
-        <p className="pointer-events-none absolute bottom-8 left-6 font-mono text-xs uppercase tracking-widest text-fg md:left-10">
+        <p className={`pointer-events-none absolute bottom-8 left-6 md:left-10 ${captionClassName}`}>
           {caption}
         </p>
       )}

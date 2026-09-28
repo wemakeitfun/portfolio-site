@@ -1,5 +1,5 @@
 import Hero from "@/components/Hero";
-import NameSmear from "@/components/NameSmear";
+import PortraitReveal from "@/components/PortraitReveal";
 import WorkGrid from "@/components/WorkGrid";
 import Marquee from "@/components/Marquee";
 import Link from "next/link";
@@ -28,7 +28,12 @@ const services = [
 export default function Home() {
   return (
     <>
-      <NameSmear />
+      <PortraitReveal
+        base="/about/headshot.webp"
+        reveal="/about/xray.webp"
+        alt="Adam Kahn"
+        overlayText={{ value: "Hi I'm Adam" }}
+      />
 
       <Hero />
 

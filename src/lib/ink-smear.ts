@@ -123,7 +123,7 @@ float hash12(vec2 p) {
 }
 void main() {
   float m = texture(uVel, vUv).z;
-  m = smoothstep(0.3, 0.7, m + (hash12(gl_FragCoord.xy) - 0.5) * 0.18 * smoothstep(0.0, 0.3, m));
+  m = smoothstep(0.12, 0.4, m + (hash12(gl_FragCoord.xy) - 0.5) * 0.18 * smoothstep(0.0, 0.12, m));
   vec3 base = texture(uTex, vUv).rgb;
   vec3 rev = texture(uReveal, vUv).rgb;
   outColor = vec4(mix(base, rev, m), 1.0);
@@ -138,7 +138,14 @@ export interface InkSmearOptions {
   ink?: string;
   paper?: string;
   /** Image mode: `base` smears under the cursor and `reveal` shows through where the cursor has been. */
-  image?: { base: string; reveal: string; /** 0 = keep the top when cropping, 1 = keep the bottom. */ focusY?: number };
+  image?: {
+    base: string;
+    reveal: string;
+    /** 0 = keep the top when cropping, 1 = keep the bottom. */
+    focusY?: number;
+    /** Baked onto `base` (not `reveal`), so smearing this spot fades the text away to the reveal image. */
+    text?: { value: string; font: string; color: string; /** Fraction of the frame width. */ fill?: number };
+  };
   /** Fraction of the canvas width the widest line may fill. */
   fill?: number;
   signal?: AbortSignal;
@@ -179,6 +186,13 @@ export async function createInkSmear(
     } catch (err) {
       console.warn("[ink-smear] image load failed:", err);
       return null;
+    }
+    const t = opts.image.text;
+    if (t) {
+      await Promise.race([
+        document.fonts.load(`100px ${t.font}`, t.value).catch(() => undefined),
+        new Promise((r) => setTimeout(r, 3000)),
+      ]);
     }
   } else {
     await Promise.race([
@@ -301,6 +315,22 @@ export async function createInkSmear(
     if (images) {
       paintCover(textCanvas, images[0], w, h);
       paintCover(revealCanvas, images[1], w, h);
+      // Baked onto the base layer only — the reveal layer (X-ray) stays clean, so
+      // smearing over the text fades it into the plain image underneath.
+      const t = opts.image?.text;
+      if (t) {
+        const ctx = textCanvas.getContext("2d")!;
+        const fill = t.fill ?? 0.62;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = `100px ${t.font}`;
+        const widest = ctx.measureText(t.value).width;
+        const cap100 = ctx.measureText("H").actualBoundingBoxAscent;
+        const size = Math.min((100 * w * fill) / widest, (100 * h * 0.32) / cap100);
+        ctx.font = `${size}px ${t.font}`;
+        ctx.fillStyle = t.color;
+        ctx.fillText(t.value, w / 2, h / 2);
+      }
       return h * 0.45; // stands in for cap height: sets the brush size
     }
     const text = opts.text ?? "";
