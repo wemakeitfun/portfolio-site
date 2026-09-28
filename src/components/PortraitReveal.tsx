@@ -77,7 +77,7 @@ export default function PortraitReveal({
       {/* Real text for screen readers and the no-WebGL/reduced-motion fallback; hidden once the canvas takes over. */}
       {overlayText && (
         <p
-          className="absolute inset-0 flex items-center justify-center px-6 text-center font-display text-[12vw] tracking-wide sm:text-6xl group-data-[ready=true]:sr-only"
+          className="absolute bottom-8 left-6 max-w-[80%] font-display text-4xl tracking-wide sm:text-6xl md:left-10 group-data-[ready=true]:sr-only"
           style={{ color: overlayText.color || "var(--accent)" }}
         >
           {overlayText.value}

@@ -320,16 +320,18 @@ export async function createInkSmear(
       const t = opts.image?.text;
       if (t) {
         const ctx = textCanvas.getContext("2d")!;
-        const fill = t.fill ?? 0.62;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
+        const fill = t.fill ?? 0.5;
+        const pad = w * 0.06;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
         ctx.font = `100px ${t.font}`;
         const widest = ctx.measureText(t.value).width;
         const cap100 = ctx.measureText("H").actualBoundingBoxAscent;
-        const size = Math.min((100 * w * fill) / widest, (100 * h * 0.32) / cap100);
+        const size = Math.min((100 * (w - pad * 2) * fill) / widest, (100 * h * 0.14) / cap100);
         ctx.font = `${size}px ${t.font}`;
+        const cap = cap100 * (size / 100);
         ctx.fillStyle = t.color;
-        ctx.fillText(t.value, w / 2, h / 2);
+        ctx.fillText(t.value, pad, h - pad - cap * 0.15);
       }
       return h * 0.45; // stands in for cap height: sets the brush size
     }
