@@ -9,7 +9,6 @@ const links = [
   { href: "/", label: "Home" },
   { href: "/artificial", label: "AI" },
   { href: "/art", label: "Art" },
-  { href: "/generative", label: "Generative" },
   { href: "/ads", label: "Ads" },
   { href: "/about", label: "About" },
 ];
