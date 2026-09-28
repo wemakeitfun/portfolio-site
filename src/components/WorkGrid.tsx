@@ -7,6 +7,7 @@ const EMPTY_LABEL: Record<Section, string> = {
   ads: "New ads are on the way.",
   art: "New art is on the way.",
   artificial: "New work is on the way.",
+  generative: "New work is on the way.",
 };
 
 export default async function WorkGrid({

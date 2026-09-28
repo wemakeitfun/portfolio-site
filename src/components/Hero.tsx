@@ -98,7 +98,8 @@ export default function Hero() {
             transition={{ delay: 0.5, duration: 0.6 }}
             className="mt-8 max-w-md text-fg-muted"
           >
-            Creativity was never the job for me, it&apos;s the obsession.
+            20 years making ads. A lifetime making art. Now I&apos;m rebuilding how both
+            get made.
           </motion.p>
         </div>
 

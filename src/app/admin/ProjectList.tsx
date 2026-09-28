@@ -9,8 +9,9 @@ import { mediaUrl, type MediaRow, type ProjectRow, type Section } from "@/lib/me
 const SECTIONS: { value: Section; label: string }[] = [
   { value: "work", label: "Work" },
   { value: "ads", label: "Ads" },
-  { value: "art", label: "Art" },
   { value: "artificial", label: "Artificial" },
+  { value: "art", label: "Art" },
+  { value: "generative", label: "Generative" },
 ];
 
 type Row = ProjectRow & { cover: MediaRow | null };
@@ -44,7 +45,13 @@ export default function ProjectList({ initial }: { initial: Row[] }) {
   const supabase = useRef(createClient()).current;
 
   const [bySection, setBySection] = useState<Record<Section, Row[]>>(() => {
-    const grouped: Record<Section, Row[]> = { work: [], ads: [], art: [], artificial: [] };
+    const grouped: Record<Section, Row[]> = {
+      work: [],
+      ads: [],
+      art: [],
+      artificial: [],
+      generative: [],
+    };
     for (const row of initial) grouped[row.section].push(row);
     return grouped;
   });

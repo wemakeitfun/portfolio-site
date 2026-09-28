@@ -1,6 +1,6 @@
 export const MEDIA_BUCKET = "portfolio-media";
 
-export type Section = "work" | "ads" | "art" | "artificial";
+export type Section = "work" | "ads" | "art" | "artificial" | "generative";
 export type HoverEffect = "none" | "smear";
 export type GalleryStyle = "grid" | "slideshow";
 export type SectionWidth = 25 | 50 | 75 | 100;

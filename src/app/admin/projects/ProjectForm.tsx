@@ -653,8 +653,9 @@ export default function ProjectForm({
           <select value={section} onChange={(e) => setSection(e.target.value as Section)} className={inputCls}>
             <option value="work">Work</option>
             <option value="ads">Ads</option>
-            <option value="art">Art</option>
             <option value="artificial">Artificial</option>
+            <option value="art">Art</option>
+            <option value="generative">Generative</option>
           </select>
         </label>
 

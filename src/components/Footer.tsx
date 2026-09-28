@@ -4,8 +4,9 @@ import ArrowUpRightIcon from "./ArrowUpRightIcon";
 const nav = [
   { href: "/", label: "Home" },
   { href: "/ads", label: "Ads" },
-  { href: "/art", label: "Art" },
   { href: "/artificial", label: "Artificial" },
+  { href: "/art", label: "Art" },
+  { href: "/generative", label: "Generative" },
 ];
 
 const socials = [

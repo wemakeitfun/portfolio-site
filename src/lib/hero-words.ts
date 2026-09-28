@@ -26,7 +26,7 @@ export const HERO_WORDS: HeroWord[] = [
     placeholder: { gradient: "from-[#2a1c4a] via-[#150e26] to-[#07050c]", accent: "#b18cff" },
   },
   {
-    text: "& Builder",
+    text: "& AI Builder",
     media: null,
     placeholder: { gradient: "from-[#243a12] via-[#121c0a] to-[#050603]", accent: "#d7ff3f" },
   },
