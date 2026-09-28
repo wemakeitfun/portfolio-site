@@ -15,11 +15,14 @@ export default function NameSmear({
   text = "Adam Kahn",
   ink,
   paper,
+  treatments,
 }: {
   text?: string;
   /** CSS colors. Default to the site's --accent and --bg. */
   ink?: string;
   paper?: string;
+  /** If given, the settled form cycles to the next one each time you start a new smear. */
+  treatments?: { ink: string; mode?: "fill" | "outline" }[];
 }) {
   const rootRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -39,6 +42,7 @@ export default function NameSmear({
       font: anton.style.fontFamily,
       ink: ink ?? (theme.getPropertyValue("--accent").trim() || "#d7ff3f"),
       paper: paper ?? (theme.getPropertyValue("--bg").trim() || "#0a0a0b"),
+      treatments,
       signal: abort.signal,
     }).then((s) => {
       if (abort.signal.aborted) return s?.destroy();
@@ -51,7 +55,7 @@ export default function NameSmear({
       smear?.destroy();
       delete root.dataset.ready;
     };
-  }, [text, ink, paper]);
+  }, [text, ink, paper, treatments]);
 
   return (
     <section

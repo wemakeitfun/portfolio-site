@@ -137,6 +137,8 @@ export interface InkSmearOptions {
   /** CSS colors. */
   ink?: string;
   paper?: string;
+  /** Text mode only: if given, cycles to the next one each time a new smear gesture starts. */
+  treatments?: { ink: string; mode?: "fill" | "outline" }[];
   /** Image mode: `base` smears under the cursor and `reveal` shows through where the cursor has been. */
   image?: {
     base: string;
@@ -337,14 +339,15 @@ export async function createInkSmear(
     }
     const text = opts.text ?? "";
     const paper = opts.paper ?? "#000";
-    const inkColor = opts.ink ?? "#fff";
+    const treatment = opts.treatments?.[treatmentIndex % opts.treatments.length];
+    const inkColor = treatment?.ink ?? opts.ink ?? "#fff";
+    const mode = treatment?.mode ?? "fill";
     const font = opts.font ?? "sans-serif";
     textCanvas.width = w;
     textCanvas.height = h;
     const ctx = textCanvas.getContext("2d")!;
     ctx.fillStyle = paper;
     ctx.fillRect(0, 0, w, h);
-    ctx.fillStyle = inkColor;
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
 
@@ -362,7 +365,14 @@ export async function createInkSmear(
     ctx.font = `${size}px ${font}`;
 
     const top = (h - (lines.length * cap + (lines.length - 1) * gap)) / 2;
-    lines.forEach((line, i) => ctx.fillText(line, w / 2, top + cap * (i + 1) + gap * i));
+    if (mode === "outline") {
+      ctx.strokeStyle = inkColor;
+      ctx.lineWidth = Math.max(2, size * 0.045);
+      lines.forEach((line, i) => ctx.strokeText(line, w / 2, top + cap * (i + 1) + gap * i));
+    } else {
+      ctx.fillStyle = inkColor;
+      lines.forEach((line, i) => ctx.fillText(line, w / 2, top + cap * (i + 1) + gap * i));
+    }
     return cap;
   };
 
@@ -373,6 +383,7 @@ export async function createInkSmear(
   let VW = 0;
   let VH = 0;
   let cap = 0;
+  let treatmentIndex = 0;
   let ink: [Target, Target];
   let vel: [Target, Target];
   let inkRead = 0;
@@ -463,11 +474,25 @@ export async function createInkSmear(
   const pointer = { x: 0, y: 0, has: false };
   const prev = { x: 0, y: 0, has: false };
   let frame = 0;
+  // Cumulative cursor travel this gesture — advancing the treatment on mere
+  // cursor entry made it change from just passing over the text, not smearing
+  // it. Only a real smear (enough accumulated distance) should count.
+  let smearDistance = 0;
+  let treatmentAdvancedThisGesture = false;
 
   const simulate = () => {
     const dx = pointer.x - prev.x;
     const dy = pointer.y - prev.y;
     const moving = pointer.has && prev.has && dx * dx + dy * dy > 0.01;
+
+    if (moving && opts.treatments && opts.treatments.length > 0 && !treatmentAdvancedThisGesture) {
+      smearDistance += Math.hypot(dx, dy);
+      if (smearDistance > Math.max(60, cap * 1.2)) {
+        treatmentAdvancedThisGesture = true;
+        treatmentIndex = (treatmentIndex + 1) % opts.treatments.length;
+        repaintText();
+      }
+    }
 
     // velocity pass
     gl.useProgram(progVel.prog);
@@ -560,6 +585,8 @@ export async function createInkSmear(
       raf = requestAnimationFrame(tick);
     } else {
       running = false;
+      smearDistance = 0;
+      treatmentAdvancedThisGesture = false;
     }
   };
 

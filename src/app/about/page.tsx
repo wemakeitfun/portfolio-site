@@ -1,22 +1,26 @@
 import Marquee from "@/components/Marquee";
-import PortraitReveal from "@/components/PortraitReveal";
+import NameSmear from "@/components/NameSmear";
 import RevealHeading from "@/components/RevealHeading";
 import { getAboutPage } from "@/lib/about";
 
 // Edits from the admin show up within a minute.
 export const revalidate = 60;
 
+// Cycles on each new smear gesture — same brand colors (lime accent, off-white),
+// alternating solid fill and a hollow outline for variety.
+const ABOUT_TREATMENTS = [
+  { ink: "#d7ff3f", mode: "fill" as const },
+  { ink: "#f3f2ec", mode: "fill" as const },
+  { ink: "#d7ff3f", mode: "outline" as const },
+  { ink: "#f3f2ec", mode: "outline" as const },
+];
+
 export default async function AboutPage() {
   const about = await getAboutPage();
 
   return (
     <div>
-      <PortraitReveal
-        base="/about/headshot.webp"
-        reveal="/about/xray.webp"
-        alt="Adam Kahn"
-        caption="Brands by day"
-      />
+      <NameSmear text="About Me" treatments={ABOUT_TREATMENTS} />
 
       <section className="px-6 md:px-10 pt-16 pb-16 md:pb-24">
         <p className="font-mono text-xs uppercase tracking-widest text-accent mb-4">
