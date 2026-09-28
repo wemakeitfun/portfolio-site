@@ -7,6 +7,10 @@
   --fg-muted: #8c8b87;
   --accent: #d7ff3f;
   --border: rgba(243, 242, 236, 0.12);
+  /* Fixed lime for solid badges (e.g. the arrow badge) — unlike text, a filled
+     circle doesn't need the light theme's darker accent for contrast, and
+     should read as the same brand color everywhere. */
+  --accent-badge: #d7ff3f;
 }
 
 /* Light theme for the Art section — set on <html> (see components/RouteTheme.tsx).
@@ -18,6 +22,7 @@
   --fg-muted: #5f5e58;
   --accent: #6b8500;
   --border: rgba(10, 10, 11, 0.12);
+  --accent-badge: #d7ff3f;
 }
 
 @theme inline {
@@ -26,6 +31,7 @@
   --color-fg: var(--fg);
   --color-fg-muted: var(--fg-muted);
   --color-accent: var(--accent);
+  --color-accent-badge: var(--accent-badge);
   --color-border: var(--border);
   --font-display: var(--font-bebas);
   --font-sans: var(--font-inter);
