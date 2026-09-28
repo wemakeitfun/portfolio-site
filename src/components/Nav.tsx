@@ -45,14 +45,14 @@ export default function Nav() {
           AK<span className="text-accent">*</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 font-mono text-xs uppercase tracking-widest text-fg-muted">
+        <nav className="hidden md:flex items-center gap-8 font-mono text-xs uppercase tracking-widest text-fg">
           {links.map((l) => {
             const active = pathname === l.href;
             return (
               <Link
                 key={l.href}
                 href={l.href}
-                className={`group relative ${active ? "text-fg" : "hover:text-fg"} transition-colors`}
+                className="group relative hover:text-accent transition-colors"
               >
                 <SwapText>{l.label}</SwapText>
                 {active && (
@@ -103,7 +103,12 @@ export default function Nav() {
           >
             <nav className="flex flex-col gap-6 font-display text-4xl">
               {links.map((l) => (
-                <Link key={l.href} href={l.href} onClick={() => setOpen(false)}>
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  onClick={() => setOpen(false)}
+                  className="hover:text-accent transition-colors"
+                >
                   {l.label}
                 </Link>
               ))}
