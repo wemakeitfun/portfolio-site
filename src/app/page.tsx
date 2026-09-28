@@ -75,12 +75,11 @@ export default function Home() {
       <section className="px-6 md:px-10 py-24 md:py-32 border-t border-border">
         <div className="grid md:grid-cols-3 gap-10">
           <p className="font-mono text-xs uppercase tracking-widest text-fg-muted">
-            About the studio
+            About Adam
           </p>
           <p className="md:col-span-2 font-display text-3xl md:text-4xl leading-[1.15] tracking-wide">
-            We&apos;re a small studio that treats design and engineering as one
-            discipline — every project ships as working code, not just a
-            handoff file.
+            I sit at the intersection of creativity and innovation, and
+            lately that intersection has gotten very busy.
           </p>
         </div>
         <div className="mt-10">

@@ -21,7 +21,7 @@ export default function Footer() {
     <footer className="border-t border-border px-6 md:px-10 pt-16 md:pt-24 pb-10">
       <div className="flex flex-col gap-2">
         <p className="font-mono text-xs uppercase tracking-widest text-fg-muted">
-          Have a project in mind?
+          Got something worth making?
         </p>
         <a
           href="mailto:kahncept@me.com"
@@ -34,7 +34,7 @@ export default function Footer() {
         </a>
       </div>
 
-      <div className="mt-16 md:mt-24 grid grid-cols-2 md:grid-cols-4 gap-10">
+      <div className="mt-16 md:mt-24 grid max-w-md grid-cols-2 gap-10">
         <div>
           <p className="font-mono text-xs uppercase tracking-widest text-fg-muted mb-4">
             Navigation
@@ -68,16 +68,6 @@ export default function Footer() {
               </li>
             ))}
           </ul>
-        </div>
-
-        <div className="col-span-2 md:col-span-2">
-          <p className="font-mono text-xs uppercase tracking-widest text-fg-muted mb-4">
-            Studio
-          </p>
-          <p className="text-fg-muted max-w-xs">
-            Remote-first, working with clients worldwide. Open for select
-            projects starting Q1 2026.
-          </p>
         </div>
       </div>
 
