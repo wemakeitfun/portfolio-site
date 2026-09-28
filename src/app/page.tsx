@@ -8,11 +8,21 @@ import Link from "next/link";
 export const revalidate = 60;
 
 const services = [
-  "Product Design",
-  "Brand Identity",
-  "Web Development",
-  "Design Systems",
-  "Motion Design",
+  "Conceptual",
+  "Artist",
+  "Designer",
+  "Game Designer",
+  "AI Builder",
+  "Systems Thinker",
+  "Creative Director",
+  "Strategic",
+  "Storyteller",
+  "World Builder",
+  "Director",
+  "Leader",
+  "Team Builder",
+  "Dreamer",
+  "Early Adopter",
 ];
 
 export default function Home() {
