@@ -17,17 +17,29 @@ export type HeroWord = {
 export const HERO_WORDS: HeroWord[] = [
   {
     text: "Creative,",
-    media: null,
+    media: {
+      kind: "image",
+      src: "/hero/creative.jpg",
+      alt: "Adam speaking in a panel discussion on stage",
+    },
     placeholder: { gradient: "from-[#3a2b1c] via-[#1c140c] to-[#050403]", accent: "#ffb26f" },
   },
   {
     text: "Artist",
-    media: null,
+    media: {
+      kind: "image",
+      src: "/hero/artist.webp",
+      alt: "Adam painting a large mural of blue figures on a yellow background",
+    },
     placeholder: { gradient: "from-[#2a1c4a] via-[#150e26] to-[#07050c]", accent: "#b18cff" },
   },
   {
     text: "& AI Builder",
-    media: null,
+    media: {
+      kind: "image",
+      src: "/hero/ai-builder.webp",
+      alt: "An AI-rendered robot examining a ladybug in a lush greenhouse",
+    },
     placeholder: { gradient: "from-[#243a12] via-[#121c0a] to-[#050603]", accent: "#d7ff3f" },
   },
 ];
