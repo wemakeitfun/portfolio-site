@@ -426,6 +426,36 @@ export async function createInkSmear(
     return null;
   }
 
+  let destroyed = false;
+
+  // The initial paint above raced the webfont against a timeout so a slow
+  // connection can't block first paint forever — but if that race was lost,
+  // the canvas is now showing a fallback font with no way to notice or
+  // correct itself. Once the real font actually finishes loading (even if
+  // that's well after first paint), repaint the text with it for real.
+  const repaintText = () => {
+    if (destroyed) return;
+    cap = paintText(W, H);
+    gl.bindTexture(gl.TEXTURE_2D, origTex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    // Reseed both ink buffers, or the old (wrong-font) ink would only slowly
+    // relax into the corrected text over the next several seconds of RELAX.
+    gl.useProgram(progShow.prog);
+    gl.uniform1i(progShow.u.uTex, 0);
+    bind(0, origTex);
+    draw(ink[0], W, H);
+    draw(ink[1], W, H);
+    present();
+  };
+  if (!opts.image) {
+    document.fonts.load(`100px ${opts.font}`, opts.text).then(repaintText).catch(() => undefined);
+  } else if (opts.image.text) {
+    const t = opts.image.text;
+    document.fonts.load(`100px ${t.font}`, t.value).then(repaintText).catch(() => undefined);
+  }
+
   // ---- Simulation ----------------------------------------------------------
 
   const pointer = { x: 0, y: 0, has: false };
@@ -508,7 +538,6 @@ export async function createInkSmear(
   let lastTime = 0;
   let acc = 0;
   let lastActivity = 0;
-  let destroyed = false;
 
   const tick = (now: number) => {
     raf = 0;
