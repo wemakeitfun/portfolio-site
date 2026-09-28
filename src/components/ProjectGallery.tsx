@@ -58,8 +58,18 @@ export default function ProjectGallery({
               {section.media.map((m: MediaRow, j: number) => (
                 <figure key={m.id}>
                   <div
-                    className="relative w-full max-h-[75vh] rounded-2xl overflow-hidden bg-bg-elevated border border-border"
-                    style={{ aspectRatio: m.width && m.height ? `${m.width} / ${m.height}` : "16 / 9" }}
+                    className="relative mx-auto max-h-[75vh] max-w-full rounded-2xl overflow-hidden bg-bg-elevated border border-border"
+                    style={{
+                      aspectRatio: m.width && m.height ? `${m.width} / ${m.height}` : "16 / 9",
+                      // A tall image (e.g. a full infographic) at full column width would blow
+                      // past max-h-[75vh], get clamped there, and then sit letterboxed inside
+                      // a now-too-wide box. Deriving the width from the height cap instead
+                      // keeps the box itself the right shape, so the whole image stays legible.
+                      width:
+                        m.width && m.height
+                          ? `min(100%, calc(75vh * ${m.width} / ${m.height}))`
+                          : "100%",
+                    }}
                   >
                     <ProjectMedia
                       media={m}
