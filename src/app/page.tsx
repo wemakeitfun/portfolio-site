@@ -43,24 +43,24 @@ export default function Home() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14 md:mb-20">
           <div>
             <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">
-              Selected Ads
+              Selected AI
             </p>
             <h2 className="font-display text-5xl md:text-6xl tracking-wide">
-              Recent projects
+              Recent AI work
             </h2>
           </div>
           <Link
-            href="/ads"
+            href="/artificial"
             className="group inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest border-b border-fg pb-1 self-start"
           >
-            View all ads
+            View all AI
             <span className="transition-transform duration-300 group-hover:translate-x-1">
               →
             </span>
           </Link>
         </div>
 
-        <WorkGrid section="ads" limit={4} />
+        <WorkGrid section="artificial" limit={4} />
       </section>
 
       <section className="px-6 md:px-10 py-24 md:py-32 border-t border-border">
@@ -85,6 +85,30 @@ export default function Home() {
         </div>
 
         <WorkGrid section="art" limit={4} />
+      </section>
+
+      <section className="px-6 md:px-10 py-24 md:py-32 border-t border-border">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14 md:mb-20">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">
+              Selected Ads
+            </p>
+            <h2 className="font-display text-5xl md:text-6xl tracking-wide">
+              Recent projects
+            </h2>
+          </div>
+          <Link
+            href="/ads"
+            className="group inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest border-b border-fg pb-1 self-start"
+          >
+            View all ads
+            <span className="transition-transform duration-300 group-hover:translate-x-1">
+              →
+            </span>
+          </Link>
+        </div>
+
+        <WorkGrid section="ads" limit={4} />
       </section>
 
       <section className="px-6 md:px-10 py-24 md:py-32 border-t border-border">
