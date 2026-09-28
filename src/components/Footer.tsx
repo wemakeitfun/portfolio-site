@@ -3,10 +3,10 @@ import ArrowUpRightIcon from "./ArrowUpRightIcon";
 
 const nav = [
   { href: "/", label: "Home" },
-  { href: "/ads", label: "Ads" },
-  { href: "/artificial", label: "Artificial" },
+  { href: "/artificial", label: "AI" },
   { href: "/art", label: "Art" },
   { href: "/generative", label: "Generative" },
+  { href: "/ads", label: "Ads" },
 ];
 
 const socials = [
