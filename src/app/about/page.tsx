@@ -1,4 +1,5 @@
 import Marquee from "@/components/Marquee";
+import Timeline from "@/components/Timeline";
 import TreatmentSmear from "@/components/TreatmentSmear";
 import RevealHeading from "@/components/RevealHeading";
 import { getAboutPage } from "@/lib/about";
@@ -60,22 +61,7 @@ export default async function AboutPage() {
           <p className="font-mono text-xs uppercase tracking-widest text-fg-muted mb-14">
             Timeline
           </p>
-          <div className="flex flex-col">
-            {about.timeline.map((t, i) => (
-              <div
-                key={`${t.year}-${i}`}
-                className={`flex flex-col md:flex-row md:items-center gap-2 md:gap-10 py-8 ${
-                  i !== 0 ? "border-t border-border" : ""
-                }`}
-              >
-                <span className="font-mono text-sm text-accent w-24 shrink-0">{t.year}</span>
-                <span className="font-display text-2xl md:text-3xl tracking-wide md:flex-1">
-                  {t.label}
-                </span>
-                <span className="text-fg-muted md:w-40 md:shrink-0">{t.detail}</span>
-              </div>
-            ))}
-          </div>
+          <Timeline entries={about.timeline} />
         </section>
       )}
     </div>
