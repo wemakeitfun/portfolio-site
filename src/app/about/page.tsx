@@ -69,10 +69,10 @@ export default async function AboutPage() {
                 }`}
               >
                 <span className="font-mono text-sm text-accent w-24 shrink-0">{t.year}</span>
-                <span className="font-display text-2xl md:text-3xl tracking-wide md:w-80 shrink-0">
+                <span className="font-display text-2xl md:text-3xl tracking-wide md:flex-1">
                   {t.label}
                 </span>
-                <span className="text-fg-muted">{t.detail}</span>
+                <span className="text-fg-muted md:w-40 md:shrink-0">{t.detail}</span>
               </div>
             ))}
           </div>
