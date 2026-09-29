@@ -44,7 +44,7 @@ export default function Nav() {
           AK<span className="text-accent">*</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 font-mono text-xs uppercase tracking-widest text-fg">
+        <nav className="hidden md:flex items-center gap-8 font-mono text-xs font-bold uppercase tracking-widest text-fg">
           {links.map((l) => {
             const active = pathname === l.href;
             return (
