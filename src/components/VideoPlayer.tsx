@@ -213,7 +213,7 @@ export default function VideoPlayer({
       <video
         ref={videoRef}
         src={src}
-        loop
+        loop={autoplay}
         muted={autoplay}
         playsInline
         preload="metadata"
