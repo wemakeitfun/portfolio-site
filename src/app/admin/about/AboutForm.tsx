@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { AboutContent, Principle, TimelineEntry } from "@/lib/about";
+import { DEFAULT_CONTENT_ORDER, type AboutContent, type ContentBlockKey, type Principle, type TimelineEntry } from "@/lib/about";
 import {
   MEDIA_BUCKET,
   mediaUrl,
@@ -30,6 +30,13 @@ const inputCls =
 const labelCls = "font-mono text-xs uppercase tracking-widest text-fg-muted";
 const smallBtn =
   "font-mono text-xs uppercase tracking-widest text-fg-muted transition-colors hover:text-fg disabled:opacity-40";
+
+const CONTENT_BLOCK_LABELS: Record<ContentBlockKey, string> = {
+  marquee: "Scrolling marquee",
+  principles: "How we work",
+  timeline: "Timeline",
+  sections: "Sections",
+};
 
 function errMsg(err: unknown) {
   if (err instanceof Error) return err.message;
@@ -107,6 +114,9 @@ export default function AboutForm({
   const [showMarquee, setShowMarquee] = useState(initial.show_marquee);
   const [showPrinciples, setShowPrinciples] = useState(initial.show_principles);
   const [showTimeline, setShowTimeline] = useState(initial.show_timeline);
+  const [contentOrder, setContentOrder] = useState<ContentBlockKey[]>(
+    initial.content_order.length ? initial.content_order : DEFAULT_CONTENT_ORDER,
+  );
 
   const [sections, setSections] = useState<ClientSection[]>(() =>
     initialSections.map((s) => ({
@@ -327,6 +337,7 @@ export default function AboutForm({
           show_marquee: showMarquee,
           show_principles: showPrinciples,
           show_timeline: showTimeline,
+          content_order: contentOrder,
         })
         .eq("id", true);
       if (error) throw error;
@@ -488,6 +499,44 @@ export default function AboutForm({
           />
           <span className={labelCls}>Show on page</span>
         </label>
+      </section>
+
+      {/* ---- Page layout: order of the sections below ---- */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="font-display text-3xl tracking-wide">Page layout</h2>
+          <p className="mt-1 text-sm text-fg-muted">
+            The order these render in on the page (a hidden or empty one is skipped).
+          </p>
+        </div>
+        <ul className="space-y-2">
+          {contentOrder.map((key, i) => (
+            <li
+              key={key}
+              className="flex items-center justify-between gap-4 rounded-md border border-border p-3"
+            >
+              <span className="font-mono text-sm">{CONTENT_BLOCK_LABELS[key]}</span>
+              <span className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setContentOrder((prev) => moved(prev, i, i - 1))}
+                  disabled={i === 0}
+                  className={smallBtn}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setContentOrder((prev) => moved(prev, i, i + 1))}
+                  disabled={i === contentOrder.length - 1}
+                  className={smallBtn}
+                >
+                  ↓
+                </button>
+              </span>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* ---- Principles ("How we work") ---- */}

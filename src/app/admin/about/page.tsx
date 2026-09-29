@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/admin";
-import type { AboutContent } from "@/lib/about";
+import { DEFAULT_CONTENT_ORDER, type AboutContent, type ContentBlockKey } from "@/lib/about";
 import type { AboutMediaRow, AboutSectionRow } from "@/lib/media";
 import AboutForm from "./AboutForm";
 
@@ -22,6 +22,7 @@ export default async function AdminAboutPage() {
     show_marquee: data?.show_marquee ?? true,
     show_principles: data?.show_principles ?? true,
     show_timeline: data?.show_timeline ?? true,
+    content_order: (data?.content_order as ContentBlockKey[] | undefined) ?? DEFAULT_CONTENT_ORDER,
   };
 
   return (

@@ -5,6 +5,15 @@ import type { MediaSection } from "./portfolio";
 export type Principle = { title: string; detail: string };
 export type TimelineEntry = { year: string; label: string; detail: string };
 
+/** The four flexible content blocks below the headline, in the order they render. */
+export type ContentBlockKey = "marquee" | "principles" | "timeline" | "sections";
+export const DEFAULT_CONTENT_ORDER: ContentBlockKey[] = [
+  "marquee",
+  "principles",
+  "timeline",
+  "sections",
+];
+
 /**
  * One of the About page's flexible image/video sections, media included.
  * Shaped exactly like a project's MediaSection (ProjectGallery renders both
@@ -24,6 +33,7 @@ export type AboutContent = {
   show_marquee: boolean;
   show_principles: boolean;
   show_timeline: boolean;
+  content_order: ContentBlockKey[];
 };
 
 // Public, cookie-less client: matches the one in lib/portfolio.ts.
@@ -44,6 +54,7 @@ const FALLBACK: AboutContent = {
   show_marquee: true,
   show_principles: true,
   show_timeline: true,
+  content_order: DEFAULT_CONTENT_ORDER,
 };
 
 /** ProjectGallery/ProjectMedia/MediaSlideshow are shared with project pages and
@@ -94,6 +105,15 @@ export async function getAboutPage(): Promise<AboutContent> {
       .map(toMediaRow),
   }));
 
+  // Defensive against a stored order that's missing a key (e.g. an older row
+  // saved before a block type existed) — append anything missing at the end
+  // rather than silently dropping that block from the page.
+  const storedOrder = (data.content_order ?? []) as ContentBlockKey[];
+  const contentOrder = [
+    ...storedOrder.filter((k) => DEFAULT_CONTENT_ORDER.includes(k)),
+    ...DEFAULT_CONTENT_ORDER.filter((k) => !storedOrder.includes(k)),
+  ];
+
   return {
     eyebrow: data.eyebrow,
     headline: data.headline,
@@ -105,5 +125,6 @@ export async function getAboutPage(): Promise<AboutContent> {
     show_marquee: data.show_marquee ?? true,
     show_principles: data.show_principles ?? true,
     show_timeline: data.show_timeline ?? true,
+    content_order: contentOrder,
   };
 }
