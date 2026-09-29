@@ -179,6 +179,12 @@ export async function createInkSmear(
   opts: InkSmearOptions,
 ): Promise<InkSmear | null> {
   const fill = opts.fill ?? 0.88;
+  // Pool mode swaps the whole image outright on a real smear (like text
+  // treatments swap ink color) — no live cross-fade. That cross-fade reads
+  // fine for a coherent photo pair (base/reveal), but for unrelated graphic
+  // treatments it shows as a patchy, half-one-half-the-other mess wherever
+  // the cursor happened to travel.
+  const hasImagePool = !!opts.image?.pool && opts.image.pool.length > 0;
 
   // Text can only be measured once the webfont is in.
   // Index 0 is always `base`; index 1 is `reveal`; any further indices are
@@ -278,13 +284,6 @@ export async function createInkSmear(
     return { tex, fbo };
   };
 
-  const clearTarget = (t: Target, w: number, h: number) => {
-    gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo);
-    gl.viewport(0, 0, w, h);
-    gl.clearColor(0, 0, 0, 0);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-  };
-
   const freeTarget = (t: Target) => {
     gl.deleteTexture(t.tex);
     gl.deleteFramebuffer(t.fbo);
@@ -340,7 +339,7 @@ export async function createInkSmear(
   const paintText = (w: number, h: number): number => {
     if (allImages) {
       paintCover(textCanvas, allImages[curBaseIdx], w, h);
-      paintCover(revealCanvas, allImages[curRevealIdx], w, h);
+      if (!hasImagePool) paintCover(revealCanvas, allImages[curRevealIdx], w, h);
       // Baked onto the base layer only — the reveal layer (X-ray) stays clean, so
       // smearing over the text fades it into the plain image underneath.
       const t = opts.image?.text;
@@ -433,7 +432,7 @@ export async function createInkSmear(
     if (key === lastKey) return false;
     lastKey = key;
 
-    if (allImages && curRevealIdx === -1) {
+    if (allImages && !hasImagePool && curRevealIdx === -1) {
       curRevealIdx = 1 + Math.floor(Math.random() * (allImages.length - 1));
     }
 
@@ -445,7 +444,7 @@ export async function createInkSmear(
     gl.bindTexture(gl.TEXTURE_2D, origTex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas);
-    if (allImages) {
+    if (allImages && !hasImagePool) {
       gl.bindTexture(gl.TEXTURE_2D, revealTex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, revealCanvas);
     }
@@ -504,12 +503,13 @@ export async function createInkSmear(
     document.fonts.load(`100px ${t.font}`, t.value).then(repaintText).catch(() => undefined);
   }
 
-  // Image-pool cycling: the just-revealed image becomes the new base, a new
-  // reveal target is drawn from a shuffle bag (every image shown once before
-  // any repeat), and the wipe mask resets so the pairing starts unsmeared.
-  const advanceImageCycle = () => {
+  // Image-pool cycling: swaps the whole image outright (like a text treatment
+  // swaps ink color) via a shuffle bag — every image shown once before any
+  // repeat. No live cross-fade: that reads fine for a coherent photo pair,
+  // but for unrelated graphic treatments a per-pixel blend of two of them
+  // just looks like a corrupted composite wherever the cursor has been.
+  const advanceImagePool = () => {
     if (destroyed || !allImages) return;
-    curBaseIdx = curRevealIdx;
     if (bagQueue.length === 0) {
       bagQueue = allImages.map((_, i) => i).filter((i) => i !== curBaseIdx);
       for (let i = bagQueue.length - 1; i > 0; i--) {
@@ -517,26 +517,8 @@ export async function createInkSmear(
         [bagQueue[i], bagQueue[j]] = [bagQueue[j], bagQueue[i]];
       }
     }
-    curRevealIdx = bagQueue.shift()!;
-
-    cap = paintText(W, H);
-    gl.bindTexture(gl.TEXTURE_2D, origTex);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas);
-    gl.bindTexture(gl.TEXTURE_2D, revealTex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, revealCanvas);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-
-    // Zero the velocity/mask buffers so the new pairing starts fully unsmeared.
-    for (const t of vel) clearTarget(t, VW, VH);
-
-    // Reseed both ink buffers with the new base.
-    gl.useProgram(progShow.prog);
-    gl.uniform1i(progShow.u.uTex, 0);
-    bind(0, origTex);
-    draw(ink[0], W, H);
-    draw(ink[1], W, H);
-    present();
+    curBaseIdx = bagQueue.shift()!;
+    repaintText();
   };
 
   // ---- Simulation ----------------------------------------------------------
@@ -556,7 +538,6 @@ export async function createInkSmear(
     const moving = pointer.has && prev.has && dx * dx + dy * dy > 0.01;
 
     const hasTreatments = !!opts.treatments && opts.treatments.length > 0;
-    const hasImagePool = !!opts.image?.pool && opts.image.pool.length > 0;
     if (moving && !treatmentAdvancedThisGesture && (hasTreatments || hasImagePool)) {
       smearDistance += Math.hypot(dx, dy);
       if (smearDistance > Math.max(60, cap * 1.2)) {
@@ -565,7 +546,7 @@ export async function createInkSmear(
           treatmentIndex = (treatmentIndex + 1) % opts.treatments!.length;
           repaintText();
         } else {
-          advanceImageCycle();
+          advanceImagePool();
         }
       }
     }
@@ -616,7 +597,7 @@ export async function createInkSmear(
   };
 
   const present = () => {
-    if (allImages) {
+    if (allImages && !hasImagePool) {
       gl.useProgram(progReveal.prog);
       gl.uniform1i(progReveal.u.uTex, 0);
       gl.uniform1i(progReveal.u.uReveal, 1);
