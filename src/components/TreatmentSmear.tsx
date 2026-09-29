@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createInkSmear, type InkSmear } from "@/lib/ink-smear";
 
 function pickTwo(images: string[]): [string, string] {
@@ -13,20 +13,21 @@ function pickTwo(images: string[]): [string, string] {
 /**
  * Full-width hero image that smears under the cursor to reveal a second one
  * underneath. Which two of `images` play that role is picked at random each
- * time the page loads. The plain <img> is what everyone sees if WebGL is
- * unavailable or the user prefers reduced motion.
+ * time the page loads. The plain <img> (always `images[0]`, so server and
+ * client agree — the random pick only ever happens client-side, inside the
+ * effect below) is what everyone sees if WebGL is unavailable or the user
+ * prefers reduced motion.
  */
 export default function TreatmentSmear({
   images,
   alt,
 }: {
-  /** Pass a stable, module-level array — a new array identity each render repicks the pair. */
+  /** Pass a stable, module-level array — a new array identity each render restarts the effect. */
   images: string[];
   alt: string;
 }) {
   const rootRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [[base, reveal]] = useState(() => pickTwo(images));
 
   useEffect(() => {
     const root = rootRef.current;
@@ -34,6 +35,7 @@ export default function TreatmentSmear({
     if (!root || !canvas) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    const [base, reveal] = pickTwo(images);
     const abort = new AbortController();
     let smear: InkSmear | null = null;
 
@@ -51,7 +53,7 @@ export default function TreatmentSmear({
       smear?.destroy();
       delete root.dataset.ready;
     };
-  }, [base, reveal]);
+  }, [images]);
 
   return (
     <section
@@ -60,7 +62,7 @@ export default function TreatmentSmear({
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={base}
+        src={images[0]}
         alt={alt}
         className="absolute inset-0 h-full w-full object-cover group-data-[ready=true]:sr-only"
       />
