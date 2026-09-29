@@ -1,4 +1,5 @@
 import Marquee from "@/components/Marquee";
+import ProjectGallery from "@/components/ProjectGallery";
 import Timeline from "@/components/Timeline";
 import TreatmentSmear from "@/components/TreatmentSmear";
 import RevealHeading from "@/components/RevealHeading";
@@ -63,6 +64,12 @@ export default async function AboutPage() {
           </p>
           <Timeline entries={about.timeline} />
         </section>
+      )}
+
+      {about.sections.length > 0 && (
+        <div className="border-t border-border pt-24 md:pt-32">
+          <ProjectGallery sections={about.sections} coverId={null} />
+        </div>
       )}
     </div>
   );

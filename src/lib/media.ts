@@ -63,6 +63,34 @@ export type SectionRow = {
   created_at: string;
 };
 
+/**
+ * About page's own sections — same idea as SectionRow, but there's only ever
+ * one About page, so no project_id.
+ */
+export type AboutSectionRow = {
+  id: string;
+  style: GalleryStyle;
+  columns: 1 | 2 | 3 | 4;
+  width_percent: SectionWidth;
+  label: string | null;
+  sort_order: number;
+  created_at: string;
+};
+
+export type AboutMediaRow = {
+  id: string;
+  section_id: string;
+  kind: "image" | "video";
+  path: string;
+  poster_path: string | null;
+  alt: string | null;
+  width: number | null;
+  height: number | null;
+  sort_order: number;
+  autoplay: boolean;
+  created_at: string;
+};
+
 /** Public URL of a file in the portfolio-media bucket. */
 export function mediaUrl(path: string) {
   return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${MEDIA_BUCKET}/${path}`;
