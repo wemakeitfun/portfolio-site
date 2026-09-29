@@ -143,13 +143,6 @@ export interface InkSmearOptions {
   image?: {
     base: string;
     reveal: string;
-    /**
-     * Extra images to keep randomly cycling to (shuffle-bag: every image in
-     * `[reveal, ...pool]` shown once before any repeat) each time a real
-     * smear fully reveals the current one. Omit for the simple, one-time
-     * two-image reveal (no cycling).
-     */
-    pool?: string[];
     /** 0 = keep the top when cropping, 1 = keep the bottom. */
     focusY?: number;
     /** Baked onto `base` (not `reveal`), so smearing this spot fades the text away to the reveal image. */
@@ -179,17 +172,9 @@ export async function createInkSmear(
   opts: InkSmearOptions,
 ): Promise<InkSmear | null> {
   const fill = opts.fill ?? 0.88;
-  // Pool mode swaps the whole image outright on a real smear (like text
-  // treatments swap ink color) — no live cross-fade. That cross-fade reads
-  // fine for a coherent photo pair (base/reveal), but for unrelated graphic
-  // treatments it shows as a patchy, half-one-half-the-other mess wherever
-  // the cursor happened to travel.
-  const hasImagePool = !!opts.image?.pool && opts.image.pool.length > 0;
 
   // Text can only be measured once the webfont is in.
-  // Index 0 is always `base`; index 1 is `reveal`; any further indices are
-  // `pool`, all treated as equally eligible once the shuffle-bag cycle starts.
-  let allImages: HTMLImageElement[] | null = null;
+  let images: [HTMLImageElement, HTMLImageElement] | null = null;
   if (opts.image) {
     const load = (src: string) =>
       new Promise<HTMLImageElement>((resolve, reject) => {
@@ -199,9 +184,7 @@ export async function createInkSmear(
         img.src = src;
       });
     try {
-      allImages = await Promise.all(
-        [opts.image.base, opts.image.reveal, ...(opts.image.pool ?? [])].map(load),
-      );
+      images = await Promise.all([load(opts.image.base), load(opts.image.reveal)]);
     } catch (err) {
       console.warn("[ink-smear] image load failed:", err);
       return null;
@@ -337,9 +320,9 @@ export async function createInkSmear(
 
   /** Paints the text onto textCanvas and returns the cap height in px. */
   const paintText = (w: number, h: number): number => {
-    if (allImages) {
-      paintCover(textCanvas, allImages[curBaseIdx], w, h);
-      if (!hasImagePool) paintCover(revealCanvas, allImages[curRevealIdx], w, h);
+    if (images) {
+      paintCover(textCanvas, images[0], w, h);
+      paintCover(revealCanvas, images[1], w, h);
       // Baked onto the base layer only — the reveal layer (X-ray) stays clean, so
       // smearing over the text fades it into the plain image underneath.
       const t = opts.image?.text;
@@ -407,13 +390,6 @@ export async function createInkSmear(
   let VH = 0;
   let cap = 0;
   let treatmentIndex = 0;
-  // Image-pool cycling: index 0 is always `base`; `curRevealIdx` starts as a
-  // random pick among [reveal, ...pool] (so with no pool it's always 1, the
-  // plain `reveal`) and the shuffle-bag keeps every image shown once before
-  // any repeat.
-  let curBaseIdx = 0;
-  let curRevealIdx = -1;
-  let bagQueue: number[] = [];
   let ink: [Target, Target];
   let vel: [Target, Target];
   let inkRead = 0;
@@ -432,10 +408,6 @@ export async function createInkSmear(
     if (key === lastKey) return false;
     lastKey = key;
 
-    if (allImages && !hasImagePool && curRevealIdx === -1) {
-      curRevealIdx = 1 + Math.floor(Math.random() * (allImages.length - 1));
-    }
-
     if (ink) [...ink, ...vel].forEach(freeTarget);
     W = canvas.width = w;
     H = canvas.height = h;
@@ -444,7 +416,7 @@ export async function createInkSmear(
     gl.bindTexture(gl.TEXTURE_2D, origTex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas);
-    if (allImages && !hasImagePool) {
+    if (images) {
       gl.bindTexture(gl.TEXTURE_2D, revealTex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, revealCanvas);
     }
@@ -503,24 +475,6 @@ export async function createInkSmear(
     document.fonts.load(`100px ${t.font}`, t.value).then(repaintText).catch(() => undefined);
   }
 
-  // Image-pool cycling: swaps the whole image outright (like a text treatment
-  // swaps ink color) via a shuffle bag — every image shown once before any
-  // repeat. No live cross-fade: that reads fine for a coherent photo pair,
-  // but for unrelated graphic treatments a per-pixel blend of two of them
-  // just looks like a corrupted composite wherever the cursor has been.
-  const advanceImagePool = () => {
-    if (destroyed || !allImages) return;
-    if (bagQueue.length === 0) {
-      bagQueue = allImages.map((_, i) => i).filter((i) => i !== curBaseIdx);
-      for (let i = bagQueue.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [bagQueue[i], bagQueue[j]] = [bagQueue[j], bagQueue[i]];
-      }
-    }
-    curBaseIdx = bagQueue.shift()!;
-    repaintText();
-  };
-
   // ---- Simulation ----------------------------------------------------------
 
   const pointer = { x: 0, y: 0, has: false };
@@ -537,17 +491,12 @@ export async function createInkSmear(
     const dy = pointer.y - prev.y;
     const moving = pointer.has && prev.has && dx * dx + dy * dy > 0.01;
 
-    const hasTreatments = !!opts.treatments && opts.treatments.length > 0;
-    if (moving && !treatmentAdvancedThisGesture && (hasTreatments || hasImagePool)) {
+    if (moving && opts.treatments && opts.treatments.length > 0 && !treatmentAdvancedThisGesture) {
       smearDistance += Math.hypot(dx, dy);
       if (smearDistance > Math.max(60, cap * 1.2)) {
         treatmentAdvancedThisGesture = true;
-        if (hasTreatments) {
-          treatmentIndex = (treatmentIndex + 1) % opts.treatments!.length;
-          repaintText();
-        } else {
-          advanceImagePool();
-        }
+        treatmentIndex = (treatmentIndex + 1) % opts.treatments.length;
+        repaintText();
       }
     }
 
@@ -597,7 +546,7 @@ export async function createInkSmear(
   };
 
   const present = () => {
-    if (allImages && !hasImagePool) {
+    if (images) {
       gl.useProgram(progReveal.prog);
       gl.uniform1i(progReveal.u.uTex, 0);
       gl.uniform1i(progReveal.u.uReveal, 1);

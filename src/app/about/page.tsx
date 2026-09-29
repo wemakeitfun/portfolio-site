@@ -6,9 +6,9 @@ import { getAboutPage } from "@/lib/about";
 // Edits from the admin show up within a minute.
 export const revalidate = 60;
 
-// Always starts on the flat green wordmark; smearing cycles randomly through
-// the rest (shuffle-bag: every image shown once before any repeat).
-const ABOUT_TREATMENT_POOL = [
+// A random two of these play base/reveal each time the page loads.
+const ABOUT_TREATMENT_IMAGES = [
+  "/about/treatments/blank.webp",
   "/about/treatments/soap.webp",
   "/about/treatments/silver.webp",
   "/about/treatments/pink.webp",
@@ -20,11 +20,7 @@ export default async function AboutPage() {
 
   return (
     <div>
-      <TreatmentSmear
-        base="/about/treatments/blank.webp"
-        pool={ABOUT_TREATMENT_POOL}
-        alt="About Me"
-      />
+      <TreatmentSmear images={ABOUT_TREATMENT_IMAGES} alt="About Me" />
 
       <section className="px-6 md:px-10 pt-16 pb-16 md:pb-24">
         <p className="font-mono text-xs uppercase tracking-widest text-accent mb-4">
