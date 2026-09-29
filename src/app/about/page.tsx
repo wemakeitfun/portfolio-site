@@ -28,7 +28,7 @@ export default async function AboutPage() {
         </p>
         <RevealHeading
           as="h1"
-          className="font-display text-[12vw] md:text-[6vw] leading-[0.95] tracking-tight max-w-5xl"
+          className="font-display text-[12vw] md:text-[6vw] leading-[0.95] tracking-tight max-w-5xl whitespace-pre-line"
         >
           {about.headline}
         </RevealHeading>
