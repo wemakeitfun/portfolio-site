@@ -34,10 +34,29 @@ const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://kahncept.com";
+const SITE_TITLE = "Adam Kahn / Kahncept";
+const SITE_DESCRIPTION =
+  "Adam Kahn / Kahncept — 20 years making ads, a lifetime making art, now rebuilding how both get made.";
+
 export const metadata: Metadata = {
-  title: "Adam Kahn / Kahncept",
-  description:
-    "Adam Kahn / Kahncept — 20 years making ads, a lifetime making art, now rebuilding how both get made.",
+  metadataBase: new URL(SITE_URL),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_TITLE,
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: SITE_TITLE }],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: ["/og-image.jpg"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
