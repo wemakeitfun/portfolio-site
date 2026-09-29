@@ -1,18 +1,18 @@
 import Marquee from "@/components/Marquee";
-import NameSmear from "@/components/NameSmear";
+import TreatmentSmear from "@/components/TreatmentSmear";
 import RevealHeading from "@/components/RevealHeading";
 import { getAboutPage } from "@/lib/about";
 
 // Edits from the admin show up within a minute.
 export const revalidate = 60;
 
-// Cycles on each new smear gesture — same brand colors (lime accent, off-white),
-// alternating solid fill and a hollow outline for variety.
-const ABOUT_TREATMENTS = [
-  { ink: "#d7ff3f", mode: "fill" as const },
-  { ink: "#f3f2ec", mode: "fill" as const },
-  { ink: "#d7ff3f", mode: "outline" as const },
-  { ink: "#f3f2ec", mode: "outline" as const },
+// Always starts on the flat green wordmark; smearing cycles randomly through
+// the rest (shuffle-bag: every image shown once before any repeat).
+const ABOUT_TREATMENT_POOL = [
+  "/about/treatments/soap.webp",
+  "/about/treatments/silver.webp",
+  "/about/treatments/pink.webp",
+  "/about/treatments/puffer.webp",
 ];
 
 export default async function AboutPage() {
@@ -20,7 +20,11 @@ export default async function AboutPage() {
 
   return (
     <div>
-      <NameSmear text="About Me" treatments={ABOUT_TREATMENTS} />
+      <TreatmentSmear
+        base="/about/treatments/blank.webp"
+        pool={ABOUT_TREATMENT_POOL}
+        alt="About Me"
+      />
 
       <section className="px-6 md:px-10 pt-16 pb-16 md:pb-24">
         <p className="font-mono text-xs uppercase tracking-widest text-accent mb-4">

@@ -143,6 +143,13 @@ export interface InkSmearOptions {
   image?: {
     base: string;
     reveal: string;
+    /**
+     * Extra images to keep randomly cycling to (shuffle-bag: every image in
+     * `[reveal, ...pool]` shown once before any repeat) each time a real
+     * smear fully reveals the current one. Omit for the simple, one-time
+     * two-image reveal (no cycling).
+     */
+    pool?: string[];
     /** 0 = keep the top when cropping, 1 = keep the bottom. */
     focusY?: number;
     /** Baked onto `base` (not `reveal`), so smearing this spot fades the text away to the reveal image. */
@@ -174,7 +181,9 @@ export async function createInkSmear(
   const fill = opts.fill ?? 0.88;
 
   // Text can only be measured once the webfont is in.
-  let images: [HTMLImageElement, HTMLImageElement] | null = null;
+  // Index 0 is always `base`; index 1 is `reveal`; any further indices are
+  // `pool`, all treated as equally eligible once the shuffle-bag cycle starts.
+  let allImages: HTMLImageElement[] | null = null;
   if (opts.image) {
     const load = (src: string) =>
       new Promise<HTMLImageElement>((resolve, reject) => {
@@ -184,7 +193,9 @@ export async function createInkSmear(
         img.src = src;
       });
     try {
-      images = await Promise.all([load(opts.image.base), load(opts.image.reveal)]);
+      allImages = await Promise.all(
+        [opts.image.base, opts.image.reveal, ...(opts.image.pool ?? [])].map(load),
+      );
     } catch (err) {
       console.warn("[ink-smear] image load failed:", err);
       return null;
@@ -258,7 +269,20 @@ export async function createInkSmear(
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
       throw new Error("float framebuffer unsupported");
     }
+    // texImage2D with null data leaves the contents undefined (not
+    // guaranteed zero) — without this, the mask channel in a fresh `vel`
+    // target can start as GPU-memory garbage instead of 0, silently leaking
+    // a bit of the reveal image in even before any smearing happens.
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     return { tex, fbo };
+  };
+
+  const clearTarget = (t: Target, w: number, h: number) => {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, t.fbo);
+    gl.viewport(0, 0, w, h);
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
   };
 
   const freeTarget = (t: Target) => {
@@ -314,9 +338,9 @@ export async function createInkSmear(
 
   /** Paints the text onto textCanvas and returns the cap height in px. */
   const paintText = (w: number, h: number): number => {
-    if (images) {
-      paintCover(textCanvas, images[0], w, h);
-      paintCover(revealCanvas, images[1], w, h);
+    if (allImages) {
+      paintCover(textCanvas, allImages[curBaseIdx], w, h);
+      paintCover(revealCanvas, allImages[curRevealIdx], w, h);
       // Baked onto the base layer only — the reveal layer (X-ray) stays clean, so
       // smearing over the text fades it into the plain image underneath.
       const t = opts.image?.text;
@@ -384,6 +408,13 @@ export async function createInkSmear(
   let VH = 0;
   let cap = 0;
   let treatmentIndex = 0;
+  // Image-pool cycling: index 0 is always `base`; `curRevealIdx` starts as a
+  // random pick among [reveal, ...pool] (so with no pool it's always 1, the
+  // plain `reveal`) and the shuffle-bag keeps every image shown once before
+  // any repeat.
+  let curBaseIdx = 0;
+  let curRevealIdx = -1;
+  let bagQueue: number[] = [];
   let ink: [Target, Target];
   let vel: [Target, Target];
   let inkRead = 0;
@@ -402,6 +433,10 @@ export async function createInkSmear(
     if (key === lastKey) return false;
     lastKey = key;
 
+    if (allImages && curRevealIdx === -1) {
+      curRevealIdx = 1 + Math.floor(Math.random() * (allImages.length - 1));
+    }
+
     if (ink) [...ink, ...vel].forEach(freeTarget);
     W = canvas.width = w;
     H = canvas.height = h;
@@ -410,7 +445,7 @@ export async function createInkSmear(
     gl.bindTexture(gl.TEXTURE_2D, origTex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas);
-    if (images) {
+    if (allImages) {
       gl.bindTexture(gl.TEXTURE_2D, revealTex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, revealCanvas);
     }
@@ -469,6 +504,41 @@ export async function createInkSmear(
     document.fonts.load(`100px ${t.font}`, t.value).then(repaintText).catch(() => undefined);
   }
 
+  // Image-pool cycling: the just-revealed image becomes the new base, a new
+  // reveal target is drawn from a shuffle bag (every image shown once before
+  // any repeat), and the wipe mask resets so the pairing starts unsmeared.
+  const advanceImageCycle = () => {
+    if (destroyed || !allImages) return;
+    curBaseIdx = curRevealIdx;
+    if (bagQueue.length === 0) {
+      bagQueue = allImages.map((_, i) => i).filter((i) => i !== curBaseIdx);
+      for (let i = bagQueue.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bagQueue[i], bagQueue[j]] = [bagQueue[j], bagQueue[i]];
+      }
+    }
+    curRevealIdx = bagQueue.shift()!;
+
+    cap = paintText(W, H);
+    gl.bindTexture(gl.TEXTURE_2D, origTex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textCanvas);
+    gl.bindTexture(gl.TEXTURE_2D, revealTex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, revealCanvas);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+
+    // Zero the velocity/mask buffers so the new pairing starts fully unsmeared.
+    for (const t of vel) clearTarget(t, VW, VH);
+
+    // Reseed both ink buffers with the new base.
+    gl.useProgram(progShow.prog);
+    gl.uniform1i(progShow.u.uTex, 0);
+    bind(0, origTex);
+    draw(ink[0], W, H);
+    draw(ink[1], W, H);
+    present();
+  };
+
   // ---- Simulation ----------------------------------------------------------
 
   const pointer = { x: 0, y: 0, has: false };
@@ -485,12 +555,18 @@ export async function createInkSmear(
     const dy = pointer.y - prev.y;
     const moving = pointer.has && prev.has && dx * dx + dy * dy > 0.01;
 
-    if (moving && opts.treatments && opts.treatments.length > 0 && !treatmentAdvancedThisGesture) {
+    const hasTreatments = !!opts.treatments && opts.treatments.length > 0;
+    const hasImagePool = !!opts.image?.pool && opts.image.pool.length > 0;
+    if (moving && !treatmentAdvancedThisGesture && (hasTreatments || hasImagePool)) {
       smearDistance += Math.hypot(dx, dy);
       if (smearDistance > Math.max(60, cap * 1.2)) {
         treatmentAdvancedThisGesture = true;
-        treatmentIndex = (treatmentIndex + 1) % opts.treatments.length;
-        repaintText();
+        if (hasTreatments) {
+          treatmentIndex = (treatmentIndex + 1) % opts.treatments!.length;
+          repaintText();
+        } else {
+          advanceImageCycle();
+        }
       }
     }
 
@@ -540,7 +616,7 @@ export async function createInkSmear(
   };
 
   const present = () => {
-    if (images) {
+    if (allImages) {
       gl.useProgram(progReveal.prog);
       gl.uniform1i(progReveal.u.uTex, 0);
       gl.uniform1i(progReveal.u.uReveal, 1);
