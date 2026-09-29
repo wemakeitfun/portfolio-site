@@ -37,7 +37,7 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Adam Kahn / Kahncept",
   description:
-    "Arc Studio designs and builds web experiences, products, and brand identities for ambitious companies.",
+    "Adam Kahn / Kahncept — 20 years making ads, a lifetime making art, now rebuilding how both get made.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
