@@ -10,6 +10,7 @@ import {
   mediaUrl,
   type AboutMediaRow,
   type AboutSectionRow,
+  type GalleryColumns,
   type GalleryStyle,
   type SectionWidth,
 } from "@/lib/media";
@@ -58,7 +59,7 @@ type ClientSection = {
   id: string;
   isNew: boolean;
   style: GalleryStyle;
-  columns: 1 | 2 | 3 | 4;
+  columns: GalleryColumns;
   width_percent: SectionWidth;
   label: string;
   sort_order: number;
@@ -774,7 +775,7 @@ export default function AboutForm({
                     <select
                       value={sec.columns}
                       onChange={(e) =>
-                        updateSection(sec.id, { columns: Number(e.target.value) as 1 | 2 | 3 | 4 })
+                        updateSection(sec.id, { columns: Number(e.target.value) as GalleryColumns })
                       }
                       className={inputCls}
                     >
@@ -782,6 +783,8 @@ export default function AboutForm({
                       <option value={2}>2 across</option>
                       <option value={3}>3 across</option>
                       <option value={4}>4 across</option>
+                      <option value={5}>5 across</option>
+                      <option value={6}>6 across</option>
                     </select>
                   </label>
                 )}

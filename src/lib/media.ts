@@ -4,6 +4,7 @@ export type Section = "work" | "ads" | "art" | "artificial" | "generative";
 export type HoverEffect = "none" | "smear";
 export type GalleryStyle = "grid" | "slideshow";
 export type SectionWidth = 25 | 50 | 75 | 100;
+export type GalleryColumns = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type ProjectRow = {
   id: string;
@@ -54,7 +55,7 @@ export type SectionRow = {
   id: string;
   project_id: string;
   style: GalleryStyle;
-  columns: 1 | 2 | 3 | 4;
+  columns: GalleryColumns;
   /** How wide the section renders, as a percentage of the page's content width. */
   width_percent: SectionWidth;
   /** Optional eyebrow label shown above this section on the project page. */
@@ -70,7 +71,7 @@ export type SectionRow = {
 export type AboutSectionRow = {
   id: string;
   style: GalleryStyle;
-  columns: 1 | 2 | 3 | 4;
+  columns: GalleryColumns;
   width_percent: SectionWidth;
   label: string | null;
   sort_order: number;
@@ -98,14 +99,16 @@ export function mediaUrl(path: string) {
 
 // Written out as literal classes (not built from a template) so Tailwind's
 // scanner can find them — a computed `md:grid-cols-${n}` wouldn't be picked up.
-const GALLERY_COLS_CLASS: Record<1 | 2 | 3 | 4, string> = {
+const GALLERY_COLS_CLASS: Record<GalleryColumns, string> = {
   1: "md:grid-cols-1",
   2: "md:grid-cols-2",
   3: "md:grid-cols-3",
   4: "md:grid-cols-4",
+  5: "md:grid-cols-5",
+  6: "md:grid-cols-6",
 };
 
 /** Tailwind class for a project's gallery grid, at the column count set in the admin. */
-export function galleryColsClass(columns: 1 | 2 | 3 | 4) {
+export function galleryColsClass(columns: GalleryColumns) {
   return GALLERY_COLS_CLASS[columns] ?? GALLERY_COLS_CLASS[1];
 }

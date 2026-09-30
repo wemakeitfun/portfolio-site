@@ -8,6 +8,7 @@ import VideoPlaybackControl from "../VideoPlaybackControl";
 import {
   MEDIA_BUCKET,
   mediaUrl,
+  type GalleryColumns,
   type GalleryStyle,
   type HoverEffect,
   type MediaRow,
@@ -39,7 +40,7 @@ type ClientSection = {
   id: string;
   isNew: boolean;
   style: GalleryStyle;
-  columns: 1 | 2 | 3 | 4;
+  columns: GalleryColumns;
   width_percent: SectionWidth;
   /** Optional eyebrow label shown above this section on the project page (e.g. "Behind the Scenes"). */
   label: string;
@@ -809,7 +810,7 @@ export default function ProjectForm({
                     <select
                       value={sec.columns}
                       onChange={(e) =>
-                        updateSection(sec.id, { columns: Number(e.target.value) as 1 | 2 | 3 | 4 })
+                        updateSection(sec.id, { columns: Number(e.target.value) as GalleryColumns })
                       }
                       className={inputCls}
                     >
@@ -817,6 +818,8 @@ export default function ProjectForm({
                       <option value={2}>2 across</option>
                       <option value={3}>3 across</option>
                       <option value={4}>4 across</option>
+                      <option value={5}>5 across</option>
+                      <option value={6}>6 across</option>
                     </select>
                   </label>
                 )}
