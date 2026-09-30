@@ -94,7 +94,7 @@ export default async function ProjectPage(props: PageProps<"/work/[slug]">) {
               <h3 className="font-display text-4xl md:text-6xl tracking-wide transition-colors group-hover:text-accent">
                 {next.title}
               </h3>
-              <span className="h-12 w-12 md:h-16 md:w-16 shrink-0 rounded-full border border-accent-badge bg-accent-badge text-bg flex items-center justify-center transition-transform duration-300 group-hover:rotate-45">
+              <span className="h-12 w-12 md:h-16 md:w-16 shrink-0 rounded-full border border-accent-badge bg-accent-badge text-accent-badge-fg flex items-center justify-center transition-transform duration-300 group-hover:rotate-45">
                 <ArrowUpRightIcon className="h-5 w-5 md:h-6 md:w-6" />
               </span>
             </div>

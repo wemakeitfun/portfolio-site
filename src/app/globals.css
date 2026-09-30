@@ -11,6 +11,10 @@
      circle doesn't need the light theme's darker accent for contrast, and
      should read as the same brand color everywhere. */
   --accent-badge: #d7ff3f;
+  /* Fixed dark icon color for content sitting on --accent-badge — using --bg
+     for this instead would flip to white on the light theme (--bg: #fff),
+     turning the arrow invisible against the lime circle. */
+  --accent-badge-fg: #0a0a0b;
 }
 
 /* Light theme for the Art section — set on <html> (see components/RouteTheme.tsx).
@@ -23,6 +27,7 @@
   --accent: #6b8500;
   --border: rgba(10, 10, 11, 0.12);
   --accent-badge: #d7ff3f;
+  --accent-badge-fg: #0a0a0b;
 }
 
 @theme inline {
@@ -32,6 +37,7 @@
   --color-fg-muted: var(--fg-muted);
   --color-accent: var(--accent);
   --color-accent-badge: var(--accent-badge);
+  --color-accent-badge-fg: var(--accent-badge-fg);
   --color-border: var(--border);
   --font-display: var(--font-bebas);
   --font-sans: var(--font-inter);

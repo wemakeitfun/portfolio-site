@@ -51,7 +51,7 @@ export default function ProjectCard({
             {String(index + 1).padStart(2, "0")}
           </div>
 
-          <div className="absolute top-5 right-5 h-9 w-9 rounded-full border border-accent-badge bg-accent-badge text-bg flex items-center justify-center transition-transform duration-300 group-hover:rotate-45">
+          <div className="absolute top-5 right-5 h-9 w-9 rounded-full border border-accent-badge bg-accent-badge text-accent-badge-fg flex items-center justify-center transition-transform duration-300 group-hover:rotate-45">
             <ArrowUpRightIcon className="h-4 w-4" />
           </div>
         </div>
