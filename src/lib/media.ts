@@ -113,6 +113,11 @@ function relativeLuminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+/** Whether a hex color reads as "light" (needs dark text/nav for contrast). */
+export function isLightColor(hex: string): boolean {
+  return relativeLuminance(hex) > 0.5;
+}
+
 /**
  * Inline style for a project page with a custom background color: besides
  * the color itself, it rescopes the fg/accent/border tokens to whichever of
@@ -133,7 +138,7 @@ function relativeLuminance(hex: string): number {
  */
 export function projectBackgroundStyle(backgroundColor: string | null): Record<string, string> | undefined {
   if (!backgroundColor) return undefined;
-  const isLight = relativeLuminance(backgroundColor) > 0.5;
+  const isLight = isLightColor(backgroundColor);
   const fg = isLight ? "#0a0a0b" : "#f3f2ec";
   return {
     backgroundColor,

@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getNextProject, getProject, getSlugs } from "@/lib/portfolio";
-import { projectBackgroundStyle } from "@/lib/media";
+import { isLightColor, projectBackgroundStyle } from "@/lib/media";
+import ProjectThemeOverride from "@/components/ProjectThemeOverride";
 import RevealHeading from "@/components/RevealHeading";
 import ProjectGallery from "@/components/ProjectGallery";
 import ArrowUpRightIcon from "@/components/ArrowUpRightIcon";
@@ -22,6 +23,7 @@ export default async function ArtificialProjectPage(props: PageProps<"/artificia
 
   return (
     <div className="pt-32" style={projectBackgroundStyle(project.background_color)}>
+      <ProjectThemeOverride isLight={project.background_color ? isLightColor(project.background_color) : null} />
       <section className="px-6 md:px-10 pb-10">
         <Link
           href="/artificial"
