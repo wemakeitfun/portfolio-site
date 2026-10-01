@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
-import type { MediaRow, ProjectRow, Section, SectionRow } from "./media";
+import type { MediaRow, ProjectRow, Section, SectionRow, TextBlockRow } from "./media";
 
-/** A gallery section with its media attached and sorted, ready to render. */
-export type MediaSection = SectionRow & { media: MediaRow[] };
+/** A gallery section with its media and text cards attached and sorted, ready to render. */
+export type MediaSection = SectionRow & { media: MediaRow[]; text_blocks: TextBlockRow[] };
 
 /** For card listings — cheap, no section/media detail beyond the cover. */
 export type ProjectSummary = ProjectRow & { cover: MediaRow | null };
@@ -48,13 +48,13 @@ export async function getProjects(section: Section = "work", limit?: number): Pr
 // ---- A single project's own page ----
 
 type DetailRow = ProjectRow & {
-  project_sections: (SectionRow & { project_media: MediaRow[] })[];
+  project_sections: (SectionRow & { project_media: MediaRow[]; project_text_blocks: TextBlockRow[] })[];
 };
 
 export async function getProject(slug: string): Promise<Project | null> {
   const { data, error } = await supabase
     .from("projects")
-    .select("*, project_sections(*, project_media(*))")
+    .select("*, project_sections(*, project_media(*), project_text_blocks(*))")
     .eq("slug", slug)
     .maybeSingle();
   if (error) {
@@ -66,9 +66,10 @@ export async function getProject(slug: string): Promise<Project | null> {
   const { project_sections, ...project } = data as unknown as DetailRow;
   const sections: MediaSection[] = [...project_sections]
     .sort((a, b) => a.sort_order - b.sort_order)
-    .map(({ project_media, ...section }) => ({
+    .map(({ project_media, project_text_blocks, ...section }) => ({
       ...section,
       media: [...project_media].sort((a, b) => a.sort_order - b.sort_order),
+      text_blocks: [...project_text_blocks].sort((a, b) => a.sort_order - b.sort_order),
     }));
   const allMedia = sections.flatMap((s) => s.media);
 

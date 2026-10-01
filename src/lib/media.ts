@@ -5,6 +5,8 @@ export type HoverEffect = "none" | "smear";
 export type GalleryStyle = "grid" | "slideshow";
 export type SectionWidth = 25 | 50 | 75 | 100;
 export type GalleryColumns = 1 | 2 | 3 | 4 | 5 | 6;
+/** "media" is the original image/video gallery; "text" is a row of label+body cards. */
+export type SectionKind = "media" | "text";
 
 export type ProjectRow = {
   id: string;
@@ -56,6 +58,7 @@ export type MediaRow = {
 export type SectionRow = {
   id: string;
   project_id: string;
+  type: SectionKind;
   style: GalleryStyle;
   columns: GalleryColumns;
   /** How wide the section renders, as a percentage of the page's content width. */
@@ -66,12 +69,23 @@ export type SectionRow = {
   created_at: string;
 };
 
+/** One card within a "text" section — a small eyebrow label plus a body paragraph. */
+export type TextBlockRow = {
+  id: string;
+  section_id: string;
+  label: string | null;
+  body: string;
+  sort_order: number;
+  created_at: string;
+};
+
 /**
  * About page's own sections — same idea as SectionRow, but there's only ever
  * one About page, so no project_id.
  */
 export type AboutSectionRow = {
   id: string;
+  type: SectionKind;
   style: GalleryStyle;
   columns: GalleryColumns;
   width_percent: SectionWidth;

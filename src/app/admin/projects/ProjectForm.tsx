@@ -14,8 +14,10 @@ import {
   type MediaRow,
   type ProjectRow,
   type Section,
+  type SectionKind,
   type SectionRow,
   type SectionWidth,
+  type TextBlockRow,
 } from "@/lib/media";
 
 const MAX_BYTES = 50 * 1024 * 1024; // matches the bucket's limit
@@ -39,11 +41,22 @@ const smallBtn =
 type ClientSection = {
   id: string;
   isNew: boolean;
+  type: SectionKind;
   style: GalleryStyle;
   columns: GalleryColumns;
   width_percent: SectionWidth;
   /** Optional eyebrow label shown above this section on the project page (e.g. "Behind the Scenes"). */
   label: string;
+  sort_order: number;
+};
+
+/** A text-block card as edited in the form. `isNew` cards have a temporary id until Save creates the real row. */
+type ClientTextBlock = {
+  id: string;
+  isNew: boolean;
+  sectionId: string;
+  label: string;
+  body: string;
   sort_order: number;
 };
 
@@ -95,10 +108,12 @@ export default function ProjectForm({
   project,
   initialMedia = [],
   initialSections = [],
+  initialTextBlocks = [],
 }: {
   project?: ProjectRow;
   initialMedia?: MediaRow[];
   initialSections?: SectionRow[];
+  initialTextBlocks?: TextBlockRow[];
 }) {
   const router = useRouter();
   const supabase = useRef(createClient()).current;
@@ -124,6 +139,7 @@ export default function ProjectForm({
     initialSections.map((s) => ({
       id: s.id,
       isNew: false,
+      type: s.type,
       style: s.style,
       columns: s.columns,
       width_percent: s.width_percent,
@@ -132,6 +148,16 @@ export default function ProjectForm({
     })),
   );
   const [media, setMedia] = useState<MediaRow[]>(initialMedia);
+  const [textBlocks, setTextBlocks] = useState<ClientTextBlock[]>(() =>
+    initialTextBlocks.map((t) => ({
+      id: t.id,
+      isNew: false,
+      sectionId: t.section_id,
+      label: t.label ?? "",
+      body: t.body,
+      sort_order: t.sort_order,
+    })),
+  );
   const [staged, setStaged] = useState<Staged[]>([]);
   const [dragKey, setDragKey] = useState<{ sectionId: string; index: number } | null>(null);
   const [dragOverKey, setDragOverKey] = useState<{ sectionId: string; index: number } | null>(null);
@@ -190,6 +216,7 @@ export default function ProjectForm({
       {
         id: `tmp-${crypto.randomUUID()}`,
         isNew: true,
+        type: "media",
         style: "grid",
         columns: 1,
         width_percent: 100,
@@ -201,7 +228,7 @@ export default function ProjectForm({
 
   function updateSection(
     id: string,
-    patch: Partial<Pick<ClientSection, "style" | "columns" | "width_percent" | "label">>,
+    patch: Partial<Pick<ClientSection, "type" | "style" | "columns" | "width_percent" | "label">>,
   ) {
     setSections((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
   }
@@ -225,12 +252,50 @@ export default function ProjectForm({
   function deleteSection(id: string) {
     const hasExisting = media.some((m) => m.section_id === id);
     const hasStaged = staged.some((s) => s.sectionId === id);
-    if (hasExisting || hasStaged) {
-      setError("Move or delete this section's files before deleting the section itself.");
+    const hasTextBlocks = textBlocks.some((t) => t.sectionId === id);
+    if (hasExisting || hasStaged || hasTextBlocks) {
+      setError("Move or delete this section's content before deleting the section itself.");
       return;
     }
     setError(null);
     setSections((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  // ---- Text blocks (cards within a "text" section) ----
+
+  function addTextBlock(sectionId: string) {
+    const inSection = textBlocks.filter((t) => t.sectionId === sectionId);
+    const nextOrder = inSection.length ? Math.max(...inSection.map((t) => t.sort_order)) + 1 : 0;
+    setTextBlocks((prev) => [
+      ...prev,
+      { id: `tmp-${crypto.randomUUID()}`, isNew: true, sectionId, label: "", body: "", sort_order: nextOrder },
+    ]);
+  }
+
+  function updateTextBlock(id: string, patch: Partial<Pick<ClientTextBlock, "label" | "body">>) {
+    setTextBlocks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
+  }
+
+  function moveTextBlock(id: string, dir: -1 | 1) {
+    setTextBlocks((prev) => {
+      const t = prev.find((x) => x.id === id);
+      if (!t) return prev;
+      const ordered = prev.filter((x) => x.sectionId === t.sectionId).sort((a, b) => a.sort_order - b.sort_order);
+      const i = ordered.findIndex((x) => x.id === id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= ordered.length) return prev;
+      const a = ordered[i];
+      const b = ordered[j];
+      return prev.map((x) => {
+        if (x.id === a.id) return { ...x, sort_order: b.sort_order };
+        if (x.id === b.id) return { ...x, sort_order: a.sort_order };
+        return x;
+      });
+    });
+  }
+
+  function deleteTextBlock(id: string) {
+    setTextBlocks((prev) => prev.filter((t) => t.id !== id));
   }
 
   // ---- Staged (not-yet-uploaded) files ----
@@ -325,6 +390,7 @@ export default function ProjectForm({
             .from("project_sections")
             .insert({
               project_id: id,
+              type: s.type,
               style: s.style,
               columns: s.columns,
               width_percent: s.width_percent,
@@ -339,6 +405,7 @@ export default function ProjectForm({
           const { error } = await supabase
             .from("project_sections")
             .update({
+              type: s.type,
               style: s.style,
               columns: s.columns,
               width_percent: s.width_percent,
@@ -361,8 +428,50 @@ export default function ProjectForm({
         }
       }
 
+      // Text blocks: delete any removed, then create/update the rest (mirrors sections above).
+      const originalTextBlockIds = new Set(initialTextBlocks.map((t) => t.id));
+      const keptTextBlockIds = new Set(textBlocks.filter((t) => !t.isNew).map((t) => t.id));
+      const removedTextBlockIds = [...originalTextBlockIds].filter((tid) => !keptTextBlockIds.has(tid));
+      if (removedTextBlockIds.length) {
+        const { error } = await supabase.from("project_text_blocks").delete().in("id", removedTextBlockIds);
+        if (error) throw error;
+      }
+      const tbTempIdMap: Record<string, string> = {};
+      for (const t of textBlocks) {
+        const sectionId = resolveSection(t.sectionId);
+        if (t.isNew) {
+          const { data, error } = await supabase
+            .from("project_text_blocks")
+            .insert({
+              project_id: id,
+              section_id: sectionId,
+              label: t.label.trim() || null,
+              body: t.body,
+              sort_order: t.sort_order,
+            })
+            .select("id")
+            .single();
+          if (error) throw error;
+          tbTempIdMap[t.id] = data.id as string;
+        } else {
+          const { error } = await supabase
+            .from("project_text_blocks")
+            .update({ section_id: sectionId, label: t.label.trim() || null, body: t.body, sort_order: t.sort_order })
+            .eq("id", t.id);
+          if (error) throw error;
+        }
+      }
+
       setSections((prev) => prev.map((s) => (s.isNew ? { ...s, id: tempIdMap[s.id] ?? s.id, isNew: false } : s)));
       setMedia((prev) => prev.map((m) => ({ ...m, section_id: resolveSection(m.section_id ?? "") })));
+      setTextBlocks((prev) =>
+        prev.map((t) => ({
+          ...t,
+          id: t.isNew ? (tbTempIdMap[t.id] ?? t.id) : t.id,
+          isNew: false,
+          sectionId: resolveSection(t.sectionId),
+        })),
+      );
 
       // Upload every staged file into its (now-real) section.
       const orderBySection = new Map<string, number>();
@@ -814,17 +923,30 @@ export default function ProjectForm({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-2">
-                  <span className={labelCls}>Style</span>
+                  <span className={labelCls}>Content</span>
                   <select
-                    value={sec.style}
-                    onChange={(e) => updateSection(sec.id, { style: e.target.value as GalleryStyle })}
+                    value={sec.type}
+                    onChange={(e) => updateSection(sec.id, { type: e.target.value as SectionKind })}
                     className={inputCls}
                   >
-                    <option value="grid">Grid</option>
-                    <option value="slideshow">Slideshow (click to advance)</option>
+                    <option value="media">Media (images &amp; video)</option>
+                    <option value="text">Text blocks (cards)</option>
                   </select>
                 </label>
-                {sec.style === "grid" && (
+                {sec.type === "media" && (
+                  <label className="space-y-2">
+                    <span className={labelCls}>Style</span>
+                    <select
+                      value={sec.style}
+                      onChange={(e) => updateSection(sec.id, { style: e.target.value as GalleryStyle })}
+                      className={inputCls}
+                    >
+                      <option value="grid">Grid</option>
+                      <option value="slideshow">Slideshow (click to advance)</option>
+                    </select>
+                  </label>
+                )}
+                {(sec.type === "text" || sec.style === "grid") && (
                   <label className="space-y-2">
                     <span className={labelCls}>Columns</span>
                     <select
@@ -861,7 +983,7 @@ export default function ProjectForm({
               </div>
 
               <label className="block space-y-2">
-                <span className={labelCls}>Type</span>
+                <span className={labelCls}>Heading</span>
                 <input
                   value={sec.label}
                   onChange={(e) => updateSection(sec.id, { label: e.target.value })}
@@ -870,6 +992,74 @@ export default function ProjectForm({
                 />
               </label>
 
+              {sec.type === "text" ? (
+                <div className="space-y-4">
+                  {textBlocks
+                    .filter((t) => t.sectionId === sec.id)
+                    .sort((a, b) => a.sort_order - b.sort_order).length === 0 && (
+                    <p className="rounded-md border border-dashed border-border p-4 text-center text-xs text-fg-muted">
+                      No text blocks yet.
+                    </p>
+                  )}
+                  <ul className="grid gap-4 sm:grid-cols-2">
+                    {textBlocks
+                      .filter((t) => t.sectionId === sec.id)
+                      .sort((a, b) => a.sort_order - b.sort_order)
+                      .map((t, ti, arr) => (
+                        <li key={t.id} className="space-y-3 rounded-md border border-border p-3">
+                          <input
+                            value={t.label}
+                            onChange={(e) => updateTextBlock(t.id, { label: e.target.value })}
+                            placeholder="Eyebrow label — e.g. The Challenge"
+                            className={inputCls}
+                          />
+                          <textarea
+                            rows={5}
+                            value={t.body}
+                            onChange={(e) => updateTextBlock(t.id, { body: e.target.value })}
+                            placeholder="Body copy"
+                            className={inputCls}
+                          />
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="flex items-center gap-3">
+                              <button
+                                type="button"
+                                onClick={() => moveTextBlock(t.id, -1)}
+                                disabled={ti === 0}
+                                className={smallBtn}
+                              >
+                                ←
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveTextBlock(t.id, 1)}
+                                disabled={ti === arr.length - 1}
+                                className={smallBtn}
+                              >
+                                →
+                              </button>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => deleteTextBlock(t.id)}
+                              className={`${smallBtn} hover:!text-red-400`}
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={() => addTextBlock(sec.id)}
+                    className="w-full rounded-md border border-dashed border-border py-3 font-mono text-xs uppercase tracking-widest transition-colors hover:border-accent"
+                  >
+                    + Add text block
+                  </button>
+                </div>
+              ) : (
+                <>
               {items.length > 0 && (
                 <>
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1146,6 +1336,8 @@ export default function ProjectForm({
                   }}
                 />
               </label>
+                </>
+              )}
             </div>
           );
         })}

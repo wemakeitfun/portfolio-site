@@ -1,14 +1,15 @@
 import { requireAdmin } from "@/lib/admin";
 import { DEFAULT_CONTENT_ORDER, type AboutContent, type ContentBlockKey } from "@/lib/about";
-import type { AboutMediaRow, AboutSectionRow } from "@/lib/media";
+import type { AboutMediaRow, AboutSectionRow, TextBlockRow } from "@/lib/media";
 import AboutForm from "./AboutForm";
 
 export default async function AdminAboutPage() {
   const { supabase } = await requireAdmin();
-  const [{ data }, { data: sectionRows }, { data: mediaRows }] = await Promise.all([
+  const [{ data }, { data: sectionRows }, { data: mediaRows }, { data: textBlockRows }] = await Promise.all([
     supabase.from("about_page").select("*").eq("id", true).maybeSingle(),
     supabase.from("about_sections").select("*").order("sort_order", { ascending: true }),
     supabase.from("about_media").select("*").order("sort_order", { ascending: true }),
+    supabase.from("about_text_blocks").select("*").order("sort_order", { ascending: true }),
   ]);
 
   const about: AboutContent = {
@@ -30,6 +31,7 @@ export default async function AdminAboutPage() {
       initial={about}
       initialSections={(sectionRows ?? []) as AboutSectionRow[]}
       initialMedia={(mediaRows ?? []) as AboutMediaRow[]}
+      initialTextBlocks={(textBlockRows ?? []) as TextBlockRow[]}
     />
   );
 }

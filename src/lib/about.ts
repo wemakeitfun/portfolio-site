@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { AboutMediaRow, MediaRow } from "./media";
+import type { AboutMediaRow, MediaRow, TextBlockRow } from "./media";
 import type { MediaSection } from "./portfolio";
 
 export type Principle = { title: string; detail: string };
@@ -82,7 +82,10 @@ function toMediaRow(m: AboutMediaRow): MediaRow {
 export async function getAboutPage(): Promise<AboutContent> {
   const [{ data, error }, { data: sectionRows, error: sectionsError }] = await Promise.all([
     supabase.from("about_page").select("*").eq("id", true).maybeSingle(),
-    supabase.from("about_sections").select("*, about_media(*)").order("sort_order", { ascending: true }),
+    supabase
+      .from("about_sections")
+      .select("*, about_media(*), about_text_blocks(*)")
+      .order("sort_order", { ascending: true }),
   ]);
   if (error || !data) {
     if (error) console.error("[about] getAboutPage failed:", error.message);
@@ -93,6 +96,7 @@ export async function getAboutPage(): Promise<AboutContent> {
   const sections: AboutMediaSection[] = (sectionRows ?? []).map((s) => ({
     id: s.id,
     project_id: "",
+    type: s.type,
     style: s.style,
     columns: s.columns,
     width_percent: s.width_percent,
@@ -103,6 +107,9 @@ export async function getAboutPage(): Promise<AboutContent> {
       .slice()
       .sort((a, b) => a.sort_order - b.sort_order)
       .map(toMediaRow),
+    text_blocks: ((s.about_text_blocks ?? []) as TextBlockRow[])
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order),
   }));
 
   // Defensive against a stored order that's missing a key (e.g. an older row

@@ -18,7 +18,7 @@ export default function ProjectGallery({
 }) {
   const visible = sections
     .map((s) => ({ ...s, media: s.media.filter((m) => m.id !== coverId) }))
-    .filter((s) => s.media.length > 0);
+    .filter((s) => (s.type === "text" ? s.text_blocks.length > 0 : s.media.length > 0));
 
   return (
     <>
@@ -34,6 +34,29 @@ export default function ProjectGallery({
             {section.label}
           </p>
         );
+
+        if (section.type === "text") {
+          return (
+            <section key={section.id} className={`px-6 md:px-10 ${pad}`}>
+              {label}
+              <div
+                style={{ maxWidth: `${section.width_percent}%` }}
+                className={`mx-auto grid grid-cols-1 gap-6 md:gap-8 ${galleryColsClass(section.columns)}`}
+              >
+                {section.text_blocks.map((t) => (
+                  <div key={t.id} className="rounded-2xl bg-bg-elevated p-6 md:p-8">
+                    {t.label && (
+                      <p className="mb-3 font-mono text-xs uppercase tracking-widest text-fg-muted">
+                        {t.label}
+                      </p>
+                    )}
+                    <p className="whitespace-pre-line text-lg leading-relaxed">{t.body}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          );
+        }
 
         if (section.style === "slideshow") {
           return (
