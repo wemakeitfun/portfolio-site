@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getNextProject, getProject, getSlugs } from "@/lib/portfolio";
+import { projectBackgroundStyle } from "@/lib/media";
 import RevealHeading from "@/components/RevealHeading";
 import ProjectGallery from "@/components/ProjectGallery";
 import ArrowUpRightIcon from "@/components/ArrowUpRightIcon";
@@ -20,7 +21,7 @@ export default async function GenerativeProjectPage(props: PageProps<"/generativ
   const next = await getNextProject(project);
 
   return (
-    <div className="pt-32">
+    <div className="pt-32" style={projectBackgroundStyle(project.background_color)}>
       <section className="px-6 md:px-10 pb-10">
         <Link
           href="/generative"

@@ -115,6 +115,7 @@ export default function ProjectForm({
   const [description, setDescription] = useState(project?.description ?? "");
   const [services, setServices] = useState((project?.services ?? []).join(", "));
   const [accent, setAccent] = useState(project?.accent ?? "#d7ff3f");
+  const [backgroundColor, setBackgroundColor] = useState(project?.background_color ?? "");
   const [hoverEffect, setHoverEffect] = useState<HoverEffect>(project?.hover_effect ?? "none");
   const [sortOrder, setSortOrder] = useState(project?.sort_order ?? 0);
   const [published, setPublished] = useState(project?.published ?? false);
@@ -290,6 +291,7 @@ export default function ProjectForm({
           .map((s) => s.trim())
           .filter(Boolean),
         accent: accent || null,
+        background_color: backgroundColor.trim() || null,
         hover_effect: hoverEffect,
         sort_order: sortOrder,
         published,
@@ -715,6 +717,24 @@ export default function ProjectForm({
             onChange={(e) => setAccent(e.target.value)}
             className="h-[42px] w-full cursor-pointer rounded-md border border-border bg-bg-elevated p-1"
           />
+        </label>
+
+        <label className="space-y-2">
+          <span className={labelCls}>Background color (this project&apos;s page only)</span>
+          <div className="flex items-center gap-2">
+            <input
+              type="color"
+              value={backgroundColor || "#0a0a0b"}
+              onChange={(e) => setBackgroundColor(e.target.value)}
+              className="h-[42px] w-12 shrink-0 cursor-pointer rounded-md border border-border bg-bg-elevated p-1"
+            />
+            <input
+              value={backgroundColor}
+              onChange={(e) => setBackgroundColor(e.target.value)}
+              placeholder="Leave blank for the site default"
+              className={inputCls}
+            />
+          </div>
         </label>
 
         <label className="space-y-2">
