@@ -92,6 +92,7 @@ function pause() {
   game.gameplayIsPaused = true;
   audio.pauseMusic(true);
   if (scene.timmy) scene.timmy.sprite.stopAllSounds();
+  scene.stopAllSounds();
   scene.inputLayer.reset();
   menus.showPause();
 }

@@ -1,7 +1,7 @@
 // Moving platforms, spike boxes, treadmills and moving walls (BaseMovingPlatform family),
 // plus fireball launchers and fireballs.
 import {
-  Sprite, assets, frameFromImage, loadImage, loadJSON, MoveTo, Sequence, RepeatForever, Call, FadeIn, FadeOut, Delay, rectInset,
+  Node, Sprite, assets, frameFromImage, loadImage, loadJSON, MoveTo, Sequence, RepeatForever, Call, FadeIn, FadeOut, Delay, rectInset,
 } from './engine.js';
 import { ParticleSystem, SUN } from './particles.js';
 import { bool } from './tilemap.js';
@@ -147,6 +147,57 @@ export class OneWayMovingPlatform extends LinearMovingPlatform {
       out.push(p);
     }
     return out;
+  }
+}
+
+// The wall of fire that chases Timmy down Run Kitty Run! (FirewallPlatform.m).
+// Touching it is instant death (isFlaming); it never falls more than 350 points behind Timmy.
+const FIREWALL_HEIGHT = 52;
+const FIREWALL_MAX_DIST = 350;
+
+export class FirewallPlatform extends OneWayMovingPlatform {
+  constructor(obj, parentNode, worldHeight, flameConfig) {
+    super(obj, parentNode, worldHeight);
+    const sp = this.sprite;
+    sp.width = obj.width; sp.height = FIREWALL_HEIGHT;
+    this.halfPlatform = { x: sp.width * 0.5, y: sp.height * 0.5 };
+    this.speed = parseFloat(obj.props.speed) || 0;
+    this.timmyDistance = 0;
+    this.flameSound = null;
+    // Flames spread along the whole wall and move with it
+    this.flames = sp.addChild(new ParticleSystem(flameConfig, { sourcePositionVariancex: sp.width * 0.5 }), 99);
+    this.flames.x = sp.width * 0.5; this.flames.y = sp.height * 0.5;
+  }
+  // An invisible box (the original used transparent.png); the particles are the visuals
+  addSprite(_imageName, parentNode) {
+    this.sprite = parentNode.addChild(new Node());
+    this.sprite.anchorX = this.sprite.anchorY = 0.5;
+  }
+  addMotion() {}
+
+  update(dt) {
+    if (game.gameplayIsPaused || this.speed === 0) return;
+    const sp = this.sprite;
+    const timmyY = this.gameScene.timmy.position.y;
+    this.timmyDistance = Math.abs(sp.y - timmyY);
+    // don't let the wall get too far behind
+    if (this.timmyDistance > FIREWALL_MAX_DIST) {
+      sp.y = timmyY + FIREWALL_MAX_DIST;
+      this.timmyDistance = FIREWALL_MAX_DIST;
+    }
+    sp.y -= this.speed * dt;
+    this.updateFlameSound();
+  }
+
+  // The roar gets louder as the fire closes in
+  updateFlameSound() {
+    if (!audio.settings.sfx) { this.stopAllSounds(); return; }
+    if (!this.flameSound) this.flameSound = audio.playEffect('fire', { loop: true, adjustable: true });
+    this.flameSound.setVolume(Math.max(1 - this.timmyDistance / FIREWALL_MAX_DIST, 0.1));
+  }
+  stopAllSounds() {
+    if (this.flameSound) this.flameSound.stop();
+    this.flameSound = null;
   }
 }
 

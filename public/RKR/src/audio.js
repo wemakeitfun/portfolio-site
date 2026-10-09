@@ -58,8 +58,12 @@ const pendingDecodes = [];
 export function flushPending() { while (ctx && pendingDecodes.length) pendingDecodes.shift()(); }
 
 // Returns a handle with stop(); safe to call with sound disabled.
-export function playEffect(name, { loop = false, volume = 1, rate = 1 } = {}) {
-  const handle = { playing: false, stop() {}, source: null };
+// adjustable: the volume can be changed while playing with handle.setVolume(v)
+export function playEffect(name, { loop = false, volume = 1, rate = 1, adjustable = false } = {}) {
+  const handle = {
+    playing: false, stop() {}, source: null, volume, gainNode: null,
+    setVolume(v) { this.volume = v; if (this.gainNode) this.gainNode.gain.value = v; },
+  };
   if (!settings.sfx || !ctx) return handle;
   const key = stem(name);
   const start = buf => {
@@ -69,8 +73,9 @@ export function playEffect(name, { loop = false, volume = 1, rate = 1 } = {}) {
     src.loop = loop;
     if (rate !== 1) src.playbackRate.value = rate;
     let node = src;
-    if (volume !== 1) {
-      const g = ctx.createGain(); g.gain.value = volume; src.connect(g); node = g;
+    if (volume !== 1 || adjustable) {
+      const g = ctx.createGain(); g.gain.value = handle.volume; src.connect(g); node = g;
+      handle.gainNode = g;
     }
     node.connect(sfxGain);
     src.start();

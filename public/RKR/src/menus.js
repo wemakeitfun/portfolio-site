@@ -10,7 +10,7 @@ const ui = document.getElementById('ui');
 let hooks = {};
 let stops = [];          // animation timers owned by the current screens
 let menuMusic = null;
-export let PLAYABLE_CHAPTERS = [1, 2, 3, 4];
+export let PLAYABLE_CHAPTERS = [1, 2, 3, 4, 5];
 
 export function initMenus(h) {
   hooks = h;

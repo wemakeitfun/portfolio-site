@@ -1,5 +1,5 @@
 // Port of BaseEnemy.m and the chapter enemies.
-import { Sprite, Animate, Sequence, Repeat, RepeatForever, Spawn, Call, MoveBy, animFrames, frame, rectIntersects } from './engine.js';
+import { Sprite, Animate, Sequence, Repeat, RepeatForever, Spawn, Call, MoveBy, Delay, animFrames, frame, rectIntersects } from './engine.js';
 import { BaseCharacter, TILE_SIZE_26, CHARACTER_COLLISION_SINK, isInstaDeath } from './character.js';
 import { EnemyCollision } from './timmy.js';
 import { smokePoof, pointsLabel } from './effects.js';
@@ -408,6 +408,82 @@ export class Zombie extends BaseEnemy {
     audio.playEffect('zombie_death');
   }
   cleanup() { this.stopSounds(); }
+}
+
+// ------------------------------------------------------------------ Kitty (Kitty.m)
+// Timmy's runaway cat in Run Kitty Run!: waves, then bolts. Never hurts Timmy and can't be stomped.
+const KITTY_SPEED = 250;
+const KITTY_JUMP_SPEED = 190;
+const KittyState = { Unknown: 0, Waiting: 1, Running: 2, InAirUp: 3, InAirDown: 4 };
+
+export class Kitty extends BaseEnemy {
+  createSprite() { return new Sprite('Kitty_run_001.png'); }
+  createAnimations() {
+    const names = (pre, ids) => ids.map(i => frame(`${pre}${String(i).padStart(3, '0')}.png`));
+    const run = names('Kitty_run_', [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
+    this.makeRun = () => new RepeatForever(new Animate(run, 0.035));
+    const idle = names('Kitty_idle_', [1, 2, 3, 4]);
+    const wave = names('Kitty_idle_', [5, 6, 7, 8, 7, 6]);
+    this.makeWait = () => new RepeatForever(new Sequence(new Animate(idle, 0.11), new Animate(wave, 0.11)));
+  }
+  setSensorOffsets() {
+    Object.assign(this.sensorOffsets, { yToTop: 15, xToMiddleRight: 13, yToMiddle: -5, xToBottomRight: 7, yToBottom: -23 });
+  }
+  setInitialState() {
+    this.extraSpriteFlip = false;
+    this.kittyState = KittyState.Waiting;
+    this.checkLeadingFoot = true;
+    this.waitTime = this.waitTime || 0;
+  }
+  didBecomeActive() {
+    super.didBecomeActive();
+    if (this.waitTime === 0) this.waitTime = 3;
+    if (this.waitTime >= 10) this.ignoreActiveBox = true;
+    // wave, then run away
+    this.sprite.runAction(new Sequence(new Delay(this.waitTime), new Call(() => this.runAway())));
+    this.runAnim = this.sprite.runAction(this.makeWait());
+  }
+  runAway() {
+    this.sprite.stopAllActions();
+    this.currentVelocity.x = this.sprite.flipX ? KITTY_SPEED : -KITTY_SPEED;
+    this.runAnim = this.sprite.runAction(this.makeRun());
+    this.kittyState = KittyState.Running;
+  }
+  // Turn around (with a hop) when running into a wall
+  handleXCollision(movingRight, overrun) {
+    if (this.collisionLockedBottom) {
+      this.currentVelocity.y = KITTY_JUMP_SPEED;
+      this.collisionLockedBottom = false;
+      this.currentVelocity.x = -this.currentVelocity.x;
+    }
+    this.newPosition.x += movingRight ? -overrun : overrun;
+  }
+  shouldContinueAfterLeadingFootHitEdge() { return true; }
+  handleLanded() {
+    const sounds = { 1: 'land_letter_block', 2: 'land_fence', 3: 'land_cinderblock', 4: 'land_swamp', 5: 'land_platform' };
+    audio.playEffect(sounds[this.footSound] || sounds[this.defaultFootSound] || 'land_grass');
+  }
+  syncCharacterState() {
+    let s = KittyState.Unknown;
+    if (this.collisionLockedBottom && this.currentVelocity.x !== 0) s = KittyState.Running;
+    else if (this.kittyState > KittyState.Waiting) s = this.currentVelocity.y > 0 ? KittyState.InAirUp : KittyState.InAirDown;
+    if (s === this.kittyState) return;
+    this.kittyState = s;
+    if (this.runAnim) this.sprite.stopAction(this.runAnim);
+    this.runAnim = null;
+    if (s === KittyState.Running) this.runAnim = this.sprite.runAction(this.makeRun());
+    else if (s === KittyState.InAirUp) this.sprite.setFrame(frame('Kitty_jump_001.png'));
+    else if (s === KittyState.InAirDown) this.sprite.setFrame(frame('Kitty_jump_002.png'));
+  }
+  handleCollisionWithPlayerRect() { return EnemyCollision.None; }
+  playDeathSound() {}
+  // The kitty doesn't poof away when Timmy wins
+  removeWithPoofButNotPoints() { this.isActive = false; this.didBecomeInactive(); }
+  didBecomeInactive() {
+    super.didBecomeInactive();
+    this.currentVelocity.x = 0;
+    this.gameScene.removeInactiveEnemy(this);
+  }
 }
 
 // ------------------------------------------------------------------ Gigglesnout

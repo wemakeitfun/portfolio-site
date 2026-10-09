@@ -5,10 +5,10 @@ import {
 } from './engine.js';
 import { TileMap, loadLevel, bool } from './tilemap.js';
 import { Timmy } from './timmy.js';
-import { Hamster, RageBunny, CyclopticSnail, Zombie, Gigglesnout } from './enemies.js';
+import { Hamster, RageBunny, CyclopticSnail, Zombie, Gigglesnout, Kitty } from './enemies.js';
 import { Pandasaurus, preloadPandasaurus, Zorsicorn, preloadZorsicorn, Mitch, preloadMitch } from './bosses.js';
 import {
-  BackAndForthMovingPlatform, OneWayMovingPlatform, PathMovingPlatform, MovingWall, FireballLauncher, Fireball,
+  BackAndForthMovingPlatform, OneWayMovingPlatform, PathMovingPlatform, MovingWall, FireballLauncher, Fireball, FirewallPlatform,
   loadPlatformImage, fireSound,
 } from './platforms.js';
 import { loadParticles, loadTexture } from './particles.js';
@@ -16,7 +16,7 @@ import { Coin, Heart, Lollipop, Checkpoint } from './pickups.js';
 import { HUD } from './hud.js';
 import { InputLayer } from './input.js';
 import { animatedSwingset, animatedTorch } from './effects.js';
-import { game, POINTS, savedGame } from './model.js';
+import { game, POINTS, savedGame, achievements } from './model.js';
 import { FootSound } from './character.js';
 import * as audio from './audio.js';
 
@@ -27,13 +27,16 @@ const BACKGROUND_OVERLAP = 2;
 
 // ------------------------------------------------------------------ parallax backgrounds
 class ScrollingBackground extends Sprite {
-  constructor(img, worldWidth, scaleX = 1, scaleY = 1.25) {
+  constructor(img, worldWidth, scaleX = 1, scaleY = 1.25, worldHeight = 0) {
     super(frameFromImage(img, 1));
     this.anchorX = 0; this.anchorY = 0;
     this.scaleX = scaleX; this.scaleY = scaleY;
-    this.factorX = (this.width * scaleX - WIN_W) / Math.max(1, worldWidth - WIN_W);
+    this.factorX = 0; this.factorY = 0;
+    // Vertical backgrounds measure against the screen width, as the original did
+    if (worldHeight) this.factorY = (this.height * scaleY - WIN_W) / Math.max(1, worldHeight - WIN_W);
+    else this.factorX = (this.width * scaleX - WIN_W) / Math.max(1, worldWidth - WIN_W);
   }
-  updateWithDelta(dx) { this.x += dx * this.factorX; }
+  updateWithDelta(dx, dy) { this.x += dx * this.factorX; this.y += dy * this.factorY; }
 }
 
 class RepeatingBackground extends Node {
@@ -78,6 +81,10 @@ const THEMES = {
     { type: 'repeat', image: 'ch2_greenMountains.png', factor: 0.3 },
     { type: 'repeat', image: 'ch2_greyMountains.png', factor: 0.5 },
   ],
+  // A tall sky that scrolls up and down (the 2x copy of chapter5_bg.png, which the original drew at 2x)
+  chapter5: [
+    { type: 'scroll', image: 'ch5_chapter5_bg_002.png', vertical: true },
+  ],
 };
 
 // Chapter 2 foreground trees (Chapter2ForegroundTrees.m): [element, x] per level
@@ -114,7 +121,7 @@ export async function prepareLevel(chapter, level) {
   const theme = THEMES[data.info.theme] || [];
   const platformImages = new Set();
   for (const o of [...(data.objectGroups.movingPlatforms || []), ...(data.objectGroups.movingWalls || [])]) {
-    if (o.props.image) platformImages.add(o.props.image);
+    if (o.props.image && o.type !== 'fireWall') platformImages.add(o.props.image);
   }
   const metaTypes = new Set(data.layers.find(l => l.name === 'meta').data
     .map(g => (data.tileProps[g] || {}).enemyType).filter(Boolean));
@@ -139,6 +146,9 @@ export async function prepareLevel(chapter, level) {
   }
   if (metaTypes.has('zorsicorn')) Object.assign(data.particleConfigs, await preloadZorsicorn(chapter));
   if (metaTypes.has('mitch')) Object.assign(data.particleConfigs, await preloadMitch());
+  if ((data.objectGroups.movingPlatforms || []).some(o => o.type === 'fireWall')) {
+    data.particleConfigs.firewall = await loadParticles('firewall');
+  }
   if ((data.objectGroups.shootingFire || []).length || metaTypes.has('panda') || metaTypes.has('zorsicorn')) {
     await loadTexture('fire.png');
   }
@@ -175,7 +185,9 @@ export class GameScene extends Node {
     for (const t of THEMES[data.info.theme] || []) {
       const img = assets.images[`assets/levels/${t.image}`];
       const k = t.scale || 1;
-      const node = t.type === 'scroll'
+      const node = t.vertical
+        ? new ScrollingBackground(img, this.worldWidth, k, k, this.worldHeight)
+        : t.type === 'scroll'
         ? new ScrollingBackground(img, this.worldWidth, k, 1.25 * k)
         : new RepeatingBackground(img, t.factor, t.auto || 0, k, 1.25 * k);
       if (t.y) node.y += t.y;
@@ -208,6 +220,11 @@ export class GameScene extends Node {
         p.addMotion(); this.movingPlatforms.push(p);
       } else if (t === 'path') {
         this.movingPlatforms.push(new PathMovingPlatform(o, this.gameLayer, this.worldHeight));
+      } else if (t === 'fireWall') {
+        const fw = new FirewallPlatform(o, this.gameLayer, this.worldHeight, this.particleConfigs.firewall);
+        fw.gameScene = this;
+        this.movingPlatforms.push(fw);
+        if (!this.firewall) this.firewall = fw;
       } else if (t === 'treadmill') {
         this.movingPlatforms.push(...OneWayMovingPlatform.treadmill(o, this.gameLayer, this.worldHeight));
       } else {
@@ -298,6 +315,14 @@ export class GameScene extends Node {
           } else if (type === 'zombie') {
             enemy = new Zombie(enemiesBatch, flip);
             enemy.position = p;
+          } else if (type === 'kitty') {
+            enemy = new Kitty(enemiesBatch, flip);
+            enemy.position = p;
+            // Kitty brakes: how long she waits before running off
+            for (const b of data.objectGroups.kittyBrakes || []) {
+              const r = { x: b.x, y: this.worldHeight - b.y - b.height, w: b.width, h: b.height };
+              if (rectContains(r, p.x, p.y)) enemy.waitTime = parseFloat(b.props.waitTime) || 0;
+            }
           } else if (type === 'gigglesnout') {
             enemy = new Gigglesnout(enemiesBatch, flip, props.color);
             enemy.position = p;
@@ -392,6 +417,7 @@ export class GameScene extends Node {
     this.levelSpecificSetup();
     game.gameplayIsPaused = false;
     this.timmy.scheduleUpdates();
+    if (this.firewall) this.schedule(this.firewall);
     this.schedule(this);
     this.gameplayStarted = true;
   }
@@ -411,7 +437,8 @@ export class GameScene extends Node {
     if (this.initTimer < 0) this.timmy.landSoundsEnabled = true;
     else this.initTimer -= dt;
     const ox = this.gameLayer.x, oy = this.gameLayer.y;
-    this.marioStyleCamera(dt);
+    if (game.currentChapter === 5) this.firewallCamera(dt);
+    else this.marioStyleCamera(dt);
     const dx = this.gameLayer.x - ox, dy = this.gameLayer.y - oy;
     for (const p of this.parallax) p.updateWithDelta(dx, dy);
     this.handleActiveBox();
@@ -461,6 +488,32 @@ export class GameScene extends Node {
       y = Math.max(this.tilemapMinY, y + d);
     } else if (sy < this.camBottom) {
       y = Math.min(this.tilemapMaxY, y + this.camBottom - sy);
+    }
+    g.x = Math.round(x); g.y = Math.round(y);
+  }
+
+  // Like marioStyleCamera, but the camera never travels upward on its own: the fire pushes it down
+  firewallCamera(dt) {
+    const fw = this.firewall;
+    if (!fw || fw.speed === 0) return;   // don't move the camera if the firewall isn't moving
+    const g = this.gameLayer;
+    let x = g.x, y = g.y;
+    const tp = this.timmy.position;
+    const sx = tp.x + g.x, sy = tp.y + g.y;
+    const maxPan = GAMEPLAY_CAMERA_PAN_PIXELS_SECOND * dt;
+    if (sx > this.camLeft) {
+      x += Math.max(this.camLeft - sx, -maxPan);
+      x = Math.max(this.tilemapMinX, x);
+    } else if (sx < this.camRight) {
+      x += Math.min(this.camRight - sx, maxPan);
+      x = Math.min(this.tilemapMaxX, x);
+    }
+    if (sy < this.camBottom) y = Math.min(this.tilemapMaxY, y + this.camBottom - sy);
+    const fireScreenY = fw.sprite.y + g.y;
+    if (fireScreenY < WIN_H) {
+      y = Math.min(this.tilemapMaxY, y + (WIN_H - fireScreenY));
+    } else if (sy > this.camTop) {
+      y = Math.max(this.tilemapMinY, y + this.camTop - sy);
     }
     g.x = Math.round(x); g.y = Math.round(y);
   }
@@ -607,15 +660,24 @@ export class GameScene extends Node {
   // ---------------------------------------------------------------- win / death
   playerWillWin() {
     game.playerIsInvincible = true;
-    for (const e of [...this.activeEnemies]) e.removeWithPoofButNotPoints();
+    for (const e of [...this.activeEnemies]) if (!(e instanceof Kitty)) e.removeWithPoofButNotPoints();
     game.addHealthBonus();
+    if (game.currentChapter === 5 && game.currentLevel === 1) {
+      if (game.health >= 3) achievements.report('RKR_15', 1);
+      this.firewall.speed = 0;
+    }
   }
 
   playerDidWin() {
     if (this.finished) return;
     this.finished = true;
     game.playerDidDie = false;
+    if (game.currentChapter === 5 && game.currentLevel === 1) {
+      achievements.addToStat('level51wins');
+      achievements.report('RKR_18', 1);
+    }
     this.timmy.sprite.stopAllSounds();
+    this.stopAllSounds();
     audio.playMusic('RKR_tim_win.mp3', false);
     this.callbacks.onWin();
   }
@@ -701,8 +763,11 @@ export class GameScene extends Node {
     this.bridge = bridge; this.chain = chain;
   }
 
+  stopAllSounds() { if (this.firewall) this.firewall.stopAllSounds(); }
+
   destroy() {
     this.hud.destroy();
+    this.stopAllSounds();
     if (this.timmy) this.timmy.sprite.stopAllSounds();
     for (const e of [...this.activeEnemies, ...this.inactiveEnemies, ...this.killedEnemies]) {
       if (e.jumpSound) e.jumpSound.stop();
