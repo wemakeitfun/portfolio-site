@@ -13,6 +13,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Run Kitty Run (static web game in public/RKR) lives at /RKR; /rkr works too.
+  async rewrites() {
+    return [
+      { source: "/RKR", destination: "/RKR/index.html" },
+      { source: "/rkr", destination: "/RKR/index.html" },
+    ];
+  },
 };
 
 export default nextConfig;

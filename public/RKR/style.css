@@ -1,0 +1,144 @@
+/* The game's own fonts (bundled with the original app) */
+@font-face { font-family: "Futura RKR"; src: url(assets/fonts/Futura-ExtraBold.ttf); font-display: block; }
+@font-face { font-family: "Interstate RKR"; src: url(assets/fonts/Interstate-Bold.ttf); font-weight: 700; font-display: block; }
+@font-face { font-family: "Interstate RKR Black"; src: url(assets/fonts/Interstate-Black.ttf); font-display: block; }
+@font-face { font-family: "Interstate RKR Regular"; src: url(assets/fonts/Interstate-Regular.ttf); font-display: block; }
+
+:root {
+  --ink: #fff;
+  --night: #000;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; height: 100%; background: var(--night); color: var(--ink);
+  overflow: hidden; touch-action: none; -webkit-user-select: none; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#stage {
+  position: absolute; left: 50%; top: 50%;
+  width: min(100vw, 150vh); height: min(66.667vw, 100vh);
+  width: min(100dvw, 150dvh); height: min(66.667dvw, 100dvh);
+  transform: translate(-50%, -50%);
+  overflow: hidden; background: #000;
+}
+canvas { display: block; width: 100%; height: 100%; }
+
+/* iPhone frame: only in desktop browsers (mouse/trackpad and room to spare); phones stay full screen */
+#device { display: contents; }
+.device-art, .home-button { display: none; }
+@media (hover: hover) and (pointer: fine) and (min-width: 700px) and (min-height: 420px) {
+  #device {
+    display: block; position: absolute; left: 50%; top: 50%;
+    width: min(94vw, calc(94vh * 694 / 392)); aspect-ratio: 694 / 392;
+    transform: translate(-50%, -50%);
+  }
+  .device-art { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+  /* The game fills the drawn 3:2 screen exactly (x 296-794, y 137-469 of the 694x392 drawing) */
+  #device #stage {
+    left: 13.833%; top: 7.398%; width: 71.758%; height: 84.694%;
+    transform: none;
+  }
+  .home-button {
+    display: block; position: absolute; left: 87.608%; top: 42.857%; width: 7.781%; height: 13.776%;
+    border: 0; padding: 0; border-radius: 50%; background: transparent; cursor: pointer;
+  }
+  .home-button:hover { background: rgba(255, 255, 255, .08); }
+  .home-button:active { background: rgba(255, 255, 255, .18); }
+  .home-button:focus-visible { outline: 2px solid #ffd34d; outline-offset: 2px; }
+}
+
+/* Menus are laid out in the original 480x320 point space and scaled to the stage */
+#ui {
+  position: absolute; left: 0; top: 0; width: 480px; height: 320px;
+  transform-origin: 0 0; transform: scale(var(--k, 1));
+  font-family: "Interstate RKR", "Trebuchet MS", sans-serif;
+}
+.screen { position: absolute; inset: 0; overflow: hidden; background: #000; }
+.screen.overlay { background: transparent; }
+.screen.overlay.dim, .screen.dim { background: rgba(0, 0, 0, 0.85); }
+.abs { position: absolute; }
+.hidden { display: none !important; }
+.nohit { pointer-events: none; }
+img.abs { display: block; }
+
+.label { display: flex; align-items: center; white-space: nowrap; line-height: 1; overflow: visible; pointer-events: none; }
+.futura { font-family: "Futura RKR", "Futura", "Century Gothic", sans-serif; }
+.interstate-bold { font-family: "Interstate RKR", "Trebuchet MS", sans-serif; }
+.interstate-black { font-family: "Interstate RKR Black", "Arial Black", sans-serif; }
+.interstate-regular { font-family: "Interstate RKR Regular", "Trebuchet MS", sans-serif; }
+
+/* UIButton: background image swaps to its highlighted version while pressed */
+.btn {
+  padding: 0; margin: 0; border: 0; color: #fff; cursor: pointer;
+  background: var(--up) center / 100% 100% no-repeat transparent;
+  font-family: "Interstate RKR", "Trebuchet MS", sans-serif; letter-spacing: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.btn:active:not([disabled]), .btn.pressed { background-image: var(--down); }
+.btn[disabled] { cursor: default; }
+.btn:focus { outline: none; }
+.btn:focus-visible { outline: 2px solid #ffd34d; outline-offset: 1px; border-radius: 12px; }
+.btn.icon { border-radius: 50%; }
+
+/* Sliding main menu (container + backgrounds move together, 0.6s like the original) */
+.slide { transition: left .6s ease-in-out, top .6s ease-in-out; }
+.slide.instant { transition: none; }
+.slide-x { transition: left .5s ease-in-out; }
+.spin { animation: spin 120s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.busy { pointer-events: none; }
+
+.pulse { animation: pulse 1.2s ease-in-out infinite alternate; }
+@keyframes pulse { from { opacity: .35; } to { opacity: 1; } }
+.pop-in { animation: pop .35s cubic-bezier(.3, 1.8, .5, 1); }
+@keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* Chapter map pager */
+.pager { overflow-y: auto; scroll-snap-type: y mandatory; scrollbar-width: none; }
+.pager::-webkit-scrollbar { display: none; }
+.page { position: relative; height: 320px; width: 480px; scroll-snap-align: start; }
+.dots { display: flex; flex-direction: column; align-items: center; gap: 7px; pointer-events: none; }
+.dots span { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .35); }
+.dots span.on { background: #fff; }
+.photo-holder { overflow: hidden; }
+.photo-view { background: rgba(0, 0, 0, .85); cursor: pointer; }
+
+/* Cutscenes */
+.video { left: 0; top: 0; width: 480px; height: 320px; object-fit: contain; background: #000; }
+
+/* Credits */
+.credits-frame { overflow: hidden; }
+.credits-frame iframe { border: 0; width: 960px; height: 640px; transform: scale(.5); transform-origin: 0 0; background: transparent; color-scheme: normal; }
+
+/* Achievements */
+.ach-list { overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.35) transparent; padding-right: 4px; }
+.ach-list:focus-visible { outline: 2px solid #ffd34d; }
+.ach-row { display: flex; align-items: center; gap: 10px; padding: 5px 2px; border-bottom: 1px solid rgba(255, 255, 255, .12); }
+.ach-icon { width: 34px; height: 34px; flex: none; opacity: .3; filter: grayscale(1); }
+.ach-row.done .ach-icon { opacity: 1; filter: none; }
+.ach-text { flex: 1; min-width: 0; }
+.ach-name { font-size: 11px; color: rgba(255, 255, 255, .55); }
+.ach-row.done .ach-name { color: #fff; }
+.ach-desc { font-size: 9px; color: rgba(255, 255, 255, .55); margin-top: 2px; }
+.ach-bar { height: 3px; margin-top: 4px; background: rgba(255, 255, 255, .15); border-radius: 2px; overflow: hidden; width: 160px; }
+.ach-bar div { height: 100%; background: #fff; }
+
+/* Achievement toast */
+.toast { transition: top .35s ease; z-index: 50; pointer-events: none; }
+
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.rotate {
+  position: fixed; inset: 0; z-index: 10; display: none; align-items: center; justify-content: center;
+  background: #000; color: #fff; font: 20px "Interstate RKR", sans-serif; padding: 16px; text-align: center;
+}
+@media (orientation: portrait) and (pointer: coarse) {
+  .rotate { display: flex; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin, .pulse, .pop-in { animation: none; }
+  .slide, .slide-x, .toast { transition: none; }
+}

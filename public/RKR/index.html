@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<base href="/RKR/">
+<meta name="rkr-public" content="1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Run Kitty Run</title>
+<link rel="icon" href="assets/ui/icon.png">
+<link rel="apple-touch-icon" href="assets/ui/icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<h1 class="visually-hidden">The Adventures of Timmy: Run Kitty Run</h1>
+<div id="device">
+  <!-- iPhone outline (desktop browsers only); the game sits exactly inside its 3:2 screen -->
+  <svg class="device-art" viewBox="200 108 694 392" aria-hidden="true" fill="none" stroke="#fff" stroke-linecap="round">
+    <path d="M352 120 v-3 a3 3 0 0 1 3 -3 h50 a3 3 0 0 1 3 3 v3" stroke-width="4" fill="#fff"/>
+    <path d="M290 488 v3 a3 3 0 0 0 3 3 h29 a3 3 0 0 0 3 -3 v-3 M352 488 v3 a3 3 0 0 0 3 3 h50 a3 3 0 0 0 3 -3 v-3 M430 488 v3 a3 3 0 0 0 3 3 h50 a3 3 0 0 0 3 -3 v-3" stroke-width="4" fill="#fff"/>
+    <rect x="208" y="122" width="678" height="366" rx="58" stroke-width="5" fill="#000"/>
+    <rect x="294" y="135" width="502" height="336" stroke-width="3"/>
+    <line x1="247" y1="271" x2="247" y2="337" stroke-width="4"/>
+    <circle cx="229" cy="303" r="4.5" fill="#fff" stroke="none"/>
+    <circle cx="247" cy="363" r="5.5" fill="#fff" stroke="none"/>
+    <circle cx="835" cy="303" r="27" stroke-width="3"/>
+  </svg>
+  <button id="home-button" class="home-button" type="button" aria-label="Pause"></button>
+  <div id="stage">
+    <canvas id="game" width="960" height="640" aria-label="Run Kitty Run game"></canvas>
+    <div id="ui"></div>
+  </div>
+</div>
+<div id="rotate" class="rotate">Turn your phone sideways to play</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
