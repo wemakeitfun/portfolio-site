@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// The Squish Run character, standing (13×25 pixels). Drawn in currentColor so it
+// The PXL RUNNER character, standing (13×25 pixels). Drawn in currentColor so it
 // follows the footer's text color on both the dark and the light (Art) theme.
 const GUY = [
   "0011111111100",
@@ -35,7 +35,7 @@ const GUY_PATH = GUY.flatMap((row, y) =>
   [...row].map((px, x) => (px === "1" ? `M${x} ${y}h1v1h-1z` : "")),
 ).join("");
 
-/** A tiny pixel guy in the footer that opens the Squish Run game (public/squish-run). */
+/** A tiny pixel guy in the footer that opens the PXL RUNNER game (public/squish-run). */
 export default function SquishEasterEgg() {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -77,7 +77,7 @@ export default function SquishEasterEgg() {
         ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Play Squish Run"
+        aria-label="Play PXL RUNNER"
         title="Psst. Click me."
         className="group inline-flex items-end text-fg-muted hover:text-accent transition-colors"
       >
@@ -95,11 +95,11 @@ export default function SquishEasterEgg() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Squish Run"
+          aria-label="PXL RUNNER"
           className="fixed inset-0 z-[100] flex flex-col bg-[#0c0d0e]"
         >
           <div className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-3 md:px-6 font-mono text-xs uppercase tracking-widest text-[#8a8d90]">
-            <span>You found Squish Run</span>
+            <span>You found PXL RUNNER</span>
             <button
               type="button"
               onClick={() => setOpen(false)}
@@ -111,7 +111,7 @@ export default function SquishEasterEgg() {
           <iframe
             ref={frameRef}
             src="/squish-run/index.html"
-            title="Squish Run"
+            title="PXL RUNNER"
             onLoad={focusGame}
             allow="autoplay"
             className="w-full flex-1 border-0"

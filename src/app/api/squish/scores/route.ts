@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * Leaderboard for Squish Run, the footer easter egg (public/squish-run).
+ * Leaderboard for PXL RUNNER, the footer easter egg (public/squish-run).
  * The game calls this route so it never holds Supabase credentials. Writes go through the
  * submit_squish_score() database function, which validates the name, rejects impossible
  * scores and rate-limits each visitor (identified by a hash of their IP, never the IP itself).
