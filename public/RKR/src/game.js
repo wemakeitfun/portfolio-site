@@ -363,6 +363,7 @@ export class GameScene extends Node {
       if (this.scheduled.includes(obj)) obj.update(dt);
     }
     this.hud.step(dt);
+    this.inputLayer.tick(dt);
     this.tileMap.setView(-this.gameLayer.x - this.shakeNode.x, -this.gameLayer.y - this.shakeNode.y, WIN_W, WIN_H);
   }
 

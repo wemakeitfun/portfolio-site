@@ -4,6 +4,9 @@ import { Node, Sprite, WIN_W, rectContains } from './engine.js';
 const LEFT_KEYS = new Set(['ArrowLeft', 'KeyA']);
 const RIGHT_KEYS = new Set(['ArrowRight', 'KeyD']);
 const JUMP_KEYS = new Set(['Space', 'ArrowUp', 'KeyW', 'KeyZ', 'KeyX', 'KeyK']);
+// Web-only forgiveness: a quick tap on the touch jump button counts as held this long (game time),
+// so taps give a medium jump instead of the tiny capped hop. Holding longer still jumps higher.
+const TOUCH_JUMP_MIN_HOLD = 0.25;
 
 export const keys = new Set();
 let lastHorizontal = 0;
@@ -39,7 +42,9 @@ function gamepadState() {
 export class InputLayer extends Node {
   constructor() {
     super();
-    this.pointers = new Map();   // pointerId -> {role, x, y}
+    this.pointers = new Map();   // pointerId -> {role, x, y, held}
+    this.jumpLinger = 0;         // seconds a released touch jump keeps counting as held
+    this.jumpGap = false;        // forces one released frame so a re-tap registers as a new press
     this.overrideUserInput = false;
     this.overrideX = 0;
 
@@ -64,20 +69,32 @@ export class InputLayer extends Node {
   pointerDown(id, x, y) {
     if (!touchMode) return false;
     const role = x > this.jumpDividerX ? 'jump' : 'move';
-    this.pointers.set(id, { role, x, y });
+    if (role === 'jump' && this.jumpLinger > 0) { this.jumpLinger = 0; this.jumpGap = true; }
+    this.pointers.set(id, { role, x, y, held: 0 });
     return true;
   }
   pointerMove(id, x, y) {
     const p = this.pointers.get(id);
     if (p) { p.x = x; p.y = y; }
   }
-  pointerUp(id) { this.pointers.delete(id); }
-  reset() { this.pointers.clear(); }
+  pointerUp(id) {
+    const p = this.pointers.get(id);
+    if (p && p.role === 'jump') this.jumpLinger = Math.max(this.jumpLinger, TOUCH_JUMP_MIN_HOLD - p.held);
+    this.pointers.delete(id);
+  }
+  reset() { this.pointers.clear(); this.jumpLinger = 0; this.jumpGap = false; }
+
+  // Advanced once per simulation step, after the characters have read the input
+  tick(dt) {
+    for (const p of this.pointers.values()) if (p.role === 'jump') p.held += dt;
+    if (this.jumpLinger > 0) this.jumpLinger -= dt;
+    this.jumpGap = false;
+  }
 
   touchState() {
-    let x = 0, jump = false;
+    let x = 0, jump = this.jumpLinger > 0;
     for (const p of this.pointers.values()) {
-      if (p.role === 'jump') jump = true;
+      if (p.role === 'jump') jump = !this.jumpGap;
       else if (rectContains(this.leftPadRect, p.x, p.y) || p.x < this.rightPadRect.x) x = -1;
       else x = 1;
     }
