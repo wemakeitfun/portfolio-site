@@ -1,0 +1,1086 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Squish Run</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; }
+  [hidden] { display: none !important; }
+  /* Layout: one centered column — HUD strip, game screen at 2x, control pad, legend. */
+  :root {
+    --bg: #0c0d0e;
+    --panel: #141618;
+    --line: #2a2d30;
+    --fg: #f1f1ec;
+    --dim: #8a8d90;
+    --coin: #f2c14e;
+    --coin-shade: #b8862b;
+    --hard: #ff5a4f;
+    --font-display: "Silkscreen", "Courier New", monospace;
+    --font-body: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 800px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 28px 40px;
+    display: grid;
+    gap: 20px;
+  }
+  header { display: grid; gap: 4px; }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(28px, 6vw, 44px);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    margin: 0;
+    text-wrap: balance;
+  }
+  header p { margin: 0; color: var(--dim); max-width: 60ch; }
+
+  .stage { display: grid; gap: 10px; }
+  .hud {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: var(--font-display);
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+  }
+  .hud .hi { color: var(--dim); }
+  .hud .coins { display: inline-flex; align-items: center; gap: 6px; color: var(--coin); }
+  .coin-dot { width: 10px; height: 10px; background: var(--coin); box-shadow: inset -2px -2px 0 var(--coin-shade); }
+  .hud .score { margin-left: auto; }
+  .hud .mode {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--bg);
+    background: var(--hard);
+    padding: 2px 6px;
+  }
+  .banner {
+    position: absolute;
+    top: 14%;
+    left: 0;
+    right: 0;
+    text-align: center;
+    pointer-events: none;
+    display: grid;
+    gap: 4px;
+  }
+  .banner .big {
+    font-family: var(--font-display);
+    font-size: clamp(18px, 4.4vw, 32px);
+    letter-spacing: 0.12em;
+    color: var(--hard);
+    margin: 0;
+    animation: blink 0.4s steps(2) 4;
+  }
+  .banner .small { margin: 0; color: var(--fg); font-size: clamp(11px, 2vw, 13px); }
+  .hud .score.flash { animation: blink 0.5s steps(2) 2; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .screen {
+    position: relative;
+    border: 1px solid var(--line);
+    background: var(--bg);
+    overflow: hidden;
+  }
+  #c:focus { outline: none; }
+  #c:focus-visible { outline: 2px solid var(--fg); outline-offset: -2px; }
+  #c {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 400 / 150;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    touch-action: none;
+    cursor: pointer;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    gap: 6px;
+    pointer-events: none;
+    padding: 0 16px 8%;
+  }
+  .overlay .big {
+    font-family: var(--font-display);
+    font-size: clamp(16px, 3.6vw, 26px);
+    letter-spacing: 0.08em;
+    margin: 0;
+  }
+  .overlay .small { margin: 0; color: var(--dim); font-size: clamp(11px, 2vw, 13px); }
+
+  .bar { display: flex; gap: 10px; flex-wrap: wrap; }
+  .pad { display: flex; gap: 10px; flex: 1 1 auto; }
+  button {
+    font-family: var(--font-display);
+    font-size: 14px;
+    letter-spacing: 0.08em;
+    color: var(--fg);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 12px 18px;
+    cursor: pointer;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  button:hover { border-color: var(--dim); }
+  button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+  .pad button { flex: 1 1 0; min-height: 52px; touch-action: none; }
+  .pad button.held, .pad button:active { background: var(--fg); color: var(--bg); }
+  #mute, #music { flex: 0 0 auto; }
+
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px 20px;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+    margin: 0;
+  }
+  .keys div { display: grid; gap: 4px; min-width: 0; }
+  .keys dt { color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .keys dd { margin: 0; }
+  kbd {
+    font-family: var(--font-body);
+    font-size: 12px;
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    padding: 1px 6px;
+    background: var(--panel);
+  }
+
+  .board { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .board-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 20px;
+    letter-spacing: 0.06em;
+    margin: 0;
+  }
+  .board-sub { color: var(--dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .board-note { margin: 0; color: var(--dim); }
+  .board-note:empty { display: none; }
+  .board-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .board-row {
+    display: grid;
+    grid-template-columns: 2.5ch minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background: var(--panel);
+  }
+  .board-row .rank { font-family: var(--font-display); color: var(--dim); font-variant-numeric: tabular-nums; }
+  .board-row:first-child .rank { color: var(--coin); }
+  .board-row .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board-row .pts { font-family: var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: 0.06em; }
+  .board-row.me { outline: 1px solid var(--fg); outline-offset: -1px; }
+  .board-row .tag { color: var(--dim); }
+  .board-mine { margin: 0; color: var(--dim); }
+  .post {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 12px;
+    border: 1px solid var(--coin);
+  }
+  .post p { margin: 0; flex: 1 1 100%; }
+  .post input {
+    flex: 1 1 180px;
+    min-width: 0;
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--fg);
+    background: var(--bg);
+    border: 1px solid var(--line);
+    padding: 10px 12px;
+  }
+  .post input:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+  .post button:disabled { opacity: 0.5; cursor: default; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .embedded .wrap { padding-block: 16px 32px; }
+  @media (prefers-reduced-motion: reduce) {
+    .hud .score.flash, .banner .big { animation: none; }
+  }
+</style>
+
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Squish Run</h1>
+    <p>Run as far as you can. Crates are solid, so land on them and hop across. Jump the gaps, double-jump when you need more air, squish under anything that flies, and grab coins for bonus points.</p>
+  </header>
+
+  <section class="stage" aria-label="Game">
+    <div class="hud">
+      <span class="hi" id="hi">HI 00000</span>
+      <span class="coins" title="Coins this run"><i class="coin-dot" aria-hidden="true"></i><span id="hudCoins">0</span></span>
+      <span class="mode" id="mode" hidden>Hard</span>
+      <span class="score" id="score">00000</span>
+    </div>
+    <div class="screen" id="screen">
+      <canvas id="c" width="400" height="150" tabindex="0" aria-label="Squish Run game screen. Press Space or W to jump, hold S to squish."></canvas>
+      <div class="banner" id="banner" hidden>
+        <p class="big" id="bannerBig">Hard mode</p>
+        <p class="small" id="bannerSmall">Faster, tighter, meaner</p>
+      </div>
+      <div class="overlay" id="overlay">
+        <p class="big" id="msgBig">Press space to run</p>
+        <p class="small" id="msgSmall">or W, or tap the screen</p>
+      </div>
+    </div>
+    <div class="bar">
+      <div class="pad">
+        <button id="bJump" type="button">Jump</button>
+        <button id="bDuck" type="button">Squish</button>
+      </div>
+      <button id="music" type="button" aria-pressed="true">Music on</button>
+      <button id="mute" type="button" aria-pressed="false">Effects on</button>
+    </div>
+    <form class="post" id="postForm" hidden>
+      <p id="postMsg" aria-live="polite"></p>
+      <label class="sr-only" for="postName">Name for the leaderboard</label>
+      <input id="postName" name="name" type="text" maxlength="12" autocomplete="nickname" placeholder="Your name (2–12 characters)" spellcheck="false">
+      <button id="postBtn" type="submit">Post score</button>
+    </form>
+  </section>
+
+  <dl class="keys">
+    <div><dt>Jump</dt><dd><kbd>Space</kbd> or <kbd>W</kbd>, or tap the game. <kbd>↑</kbd> works too.</dd></div>
+    <div><dt>Double jump</dt><dd>Jump again in mid-air</dd></div>
+    <div><dt>Squish</dt><dd>Hold <kbd>S</kbd>. In the air it drops you fast. <kbd>↓</kbd> works too.</dd></div>
+    <div><dt>Crates</dt><dd>Land on top and run along them. Hitting the side ends the run.</dd></div>
+    <div><dt>Gaps</dt><dd>Jump over them, or use a crate pillar in the middle as a stepping stone.</dd></div>
+    <div><dt>Hard mode</dt><dd>Starts at 1,000 points. The game speeds up, obstacles bunch together and new ones appear.</dd></div>
+    <div><dt>Extreme</dt><dd>Starts at 2,500 points. Rolling and bouncing boulders, chains of gaps, and sky paths to hop up and down across.</dd></div>
+    <div><dt>Coins</dt><dd>Each one you grab adds 10 bonus points to your score.</dd></div>
+  </dl>
+
+  <section class="board" aria-labelledby="boardTitle">
+    <div class="board-head">
+      <h2 id="boardTitle">Leaderboard</h2>
+      <span class="board-sub">Best run per player</span>
+    </div>
+    <p class="board-note" id="boardNote" aria-live="polite">Loading scores…</p>
+    <ol class="board-list" id="boardList"></ol>
+    <p class="board-mine" id="boardMine" hidden></p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const F = {"run":[["00011111111100","00111111111110","01111111111111","01111111111111","01111111111111","01111100111001","01111110111101","01111100111001","01111111111111","01111111000111","01111111111111","00111111111110","01111111111101","11111111111101","11110111111101","11101111111101","11101111111101","11101111111101","01101111111100","00000111100000","00000111101100","00000111101100","00000111101100","00000111100000","00000111100000"],["000111111111000","001111111111100","011111111111110","011111111111110","011111111111110","011111111111110","011111111111110","011111001110010","011111111111110","011111111011110","011111111111110","000111111111100","011011111111010","011111111111010","111101111111010","111101111111010","111110111111011","011110111111011","011101111111011","000011110000000","000011110111000","000001110011000","000011111000000","000011111000000"],["00111111111000","01111111111100","11111111111110","11111111111110","11111111111110","11111001110010","11111101111010","11111001110010","11111111111110","11111110001110","11111111111110","00011111111100","11101111111010","11101111111010","11101111111010","11110111111011","11111011111011","01111011111011","00111011111000","00000111000100","00111110111100","00111100111110","00111100011110","01111000001110","01111000000000"],["00111111111000","01111111111100","11111111111110","11111111111110","11111111111110","11111001110010","11111101111010","11111001110010","11111111111110","11111110001110","11111111111110","01111111111100","00111111111100","11101111111010","11101111111010","11110111111010","11110111111010","01111011111010","00111011111000","00110111110000","00001111000100","00111100011110","01111000001110","01111000001111","11110000001111","11110000000000"],["001111111110000","011111111111000","111111111111100","111111111111100","111111111111100","111110011100100","111111011110100","111110011100100","111111111111100","111111100011100","111111111111100","011111111111000","000111111111000","111011111111000","111101111111000","111110111111000","011111011111000","001111101111000","000111011111000","000010111111000","110101100000000","111111101111100","111111000111110","111111000011111","001110000001110","000000000000100"],["0011111111100","0111111111110","1111111111111","1111111111111","1111111111111","1111100111001","1111110111101","1111100111001","1111111111111","1111111000111","1111111111111","0111111111110","0001111111110","1110111111110","1111001111110","1111110111110","0111110111110","0111110111110","0001001111110","0000111111110","0001111000000","0001111011110","0001111011110","0011111001111","0011110000111","0000000000111"],["00111111111000","01111111111100","11111111111110","11111111111110","11111111111110","11111001110010","11111101111010","11111001110010","11111111111110","11111110001110","11111111111110","00011111111100","11101111111010","11101111111011","11110111111011","01110111111010","01111011111010","00111011111000","00110111101000","00001111100000","00011111011000","00011110111000","00011110111000","00000001111000","00000001111000"],["00111111111000","01111111111100","11111111111110","11111111111110","11111111111110","11111001110010","11111101111010","11111001110010","11111111111110","11111110001110","11111111111110","00011111111100","11101111111010","11101111111010","11101111111010","11110111111011","11111011111011","11111011101011","01110111110000","00000001111000","00000101111000","00000101111000","00000110000000","00000111100000"],["00000111111111000000","00001111111111100000","00011111111111110000","00011111111111110000","00011111111111110000","00011111001110010000","00011111101111010000","00011111001110010000","00011111111111110000","00011111110001110000","00011111111111110000","00001111111111100000","00010111111111010000","00111111111111011000","01111111111111011100","11111011111111011110","11110011111111011111","11100011111111001111","01000011111111000110","00000001111100000000","00000000111110000000","00000001011111000000","00000011101111100000","00000011110111100000","00000001100011000000"],["0000011111111100000","0000111111111110000","0001111111111111000","0001111111111111000","0001111111111111000","0001111100111001000","0001111110111101000","0001111100111001000","0001111111111111000","0001111111000111000","0001111111111111000","0000111111111110000","0000011111111110000","0001111111111101000","0011111111111101100","0111110111111101110","1111101111111101110","1111001111111101111","1111001111111101111","0110001111111100110","0000001111011100000","0000001111011100000","0000000111101000000","0000000111101000000","0000000011110000000","0000000011110000000"]],"idle":[["0011111111100","0111111111110","1111111111111","1111111111111","1111111111111","1111100111001","1111110111101","1111100111001","1111111111111","1111111000111","1111111111111","0001111111110","1110111111110","1110111111101","1110111111101","1110111111101","1110111111101","1110111111101","1110111111101","0000111000000","0011110011100","0011110011100","0011110011100","0111100011110","0111100011110"],["0011111111100","0111111111110","1111111111111","1111111111111","1111111111111","1111100111001","1111110111101","1111100111001","1111111111111","1111111000111","1111111111111","0001111111110","1110111111110","1110111111101","1110111111101","1110111111101","1110111111101","1110111111101","1110111111101","0000111000000","0011110011100","0011110011100","0011110011100","0111100011110","0111100011110"]],"up":["0011111111100","0111111111110","1111111111111","1111111111111","1111100111001","1111111111111","1111111101111","1111111111111","1111111111111","1111111111111","0001111111110","1110111111110","1110111111101","1110111111101","1110111111101","1110111111101","1110111111101","1110111111101","0000111000000","0001110011100","0001110011100","0001110011100","0001110011100","0001110011100","0001110011100"],"apex":["0011111111100","0111111111110","1111100111001","1111111111111","1111111110111","1111111111111","1111111111111","1111111111111","0001111111110","1110111111110","1110111111101","1110111111101","1110111111101","1110111111101","0000111000000","0001110011100","0001110011100","0001110011100","0001110011100","0001110011100","0001110011100"],"fall":["0011111111100","0111111111110","1111111111111","1111111111111","1111100111001","1111111111111","1111111101111","1111111111111","1111111111111","1111111111111","0001111111110","1110111111110","1110111111101","1110111111101","1110111111101","1110111111101","1110111111101","1110111111101","0000111000000","0001110011100","0001110011100","0001110011100","0001110011100","0001110011100","0001110011100"],"land":["000111111111000","001111111111100","011111111111110","011111111111110","011111111111110","011111111111110","011111111111110","011111001110010","011111111111110","011111111011110","011111111111110","000011111111100","111101111111011","111101111111011","111101111111011","111011111111011","111011111111011","000111111111100","000111111111100","000111100111100","001111000011110","001111000011110"],"duck":["01111111111111111111110","11111111111111111111111","11111111110000000111111","01111111111111111111110","00011111111111111111000"],"duck2":["0000011111111000000","0001111111111110000","0111111111111111100","0111111011111011110","1111111111111111111","1111111110000111111","1111111111111111111","0111111111111111100","0001111111111110000"],"spin":[["00001111111110000","00011111111111000","00111111111111100","00111111111111100","00111110011100100","00111111111111100","00111111110111100","00111111111111100","00111111111111100","00111111111111100","00000111111111000","01111011111111011","11111011111110111","11111011111110110","11100011111110110","11100011111110000","00000011111110000","00000111000110000","00000111001110000","00000111001110000","00000111001110000","00000111001110000","00000111001110000"],["0011111111100","0111111111110","1111100111001","1111111111111","1111111110111","1111111111111","1111111111111","1111111111111","0001111111110","1110111111110","1110111111101","1110111111101","1110110001000","1110111100111","0000011100111","0000011100111","0000011100111","0000011100111"],["0011111111100","0111111111110","1111111111111","1111110011001","1111111011101","1111111111111","1111111110111","1111111111111","0001111111110","1110111111110","1110111111101","1110111111101","1110110000010","1110111011110","0000111001110","0000111001110","0000111001110","0000111001110"],["0011111111100","0111111111110","1111111111111","1111110111101","1111100111001","1111111111111","1111111100111","1111111111111","0001111111110","1110111111110","1110111111101","1110111111101","1110110001000","1110111100111","0000011100111","0000011100111","0000011100111","0000011100111"]],"dead":["00001111111110000","00011111111111000","00111110011100100","00111111111111100","00111111111011100","00111111111111100","00111111111111100","00111111111111100","11000111111111011","11111011111111011","11111011111110111","00000011111110000","00000011100100100","00000011110011100","00000001110011100","00000001110011100","00000001110011100","00000001110011100"]};
+
+  // ---------- storage (per browser) ----------
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+
+  // ---------- sprites ----------
+  function cv(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+  function mk(rows, map = { '1': '#f1f1ec' }) {
+    const h = rows.length, w = rows[0].length, c = cv(w, h), x = c.getContext('2d');
+    rows.forEach((r, y) => { for (let i = 0; i < w; i++) if (map[r[i]]) { x.fillStyle = map[r[i]]; x.fillRect(i, y, 1, 1); } });
+    return { c, w, h };
+  }
+  const COIN = { g: '#f2c14e', l: '#fff3c4', d: '#b8862b' };
+  const SPR = {
+    run: F.run.map(r => mk(r)), idle: F.idle.map(r => mk(r)), spin: F.spin.map(r => mk(r)),
+    up: mk(F.up), apex: mk(F.apex), fall: mk(F.fall), land: mk(F.land),
+    duck: mk(F.duck), duck2: mk(F.duck2), dead: mk(F.dead),
+    crate: mk([
+      '1111111111','1000000001','1011111101','1010000101','1010110101',
+      '1010110101','1010000101','1011111101','1000000001','1111111111']),
+    spike: mk(['0001000','0001000','0011100','0011100','0111110','0111110','1111111','1111111']),
+    fly: [
+      mk(['1100000000011','1110011100111','0111111111110','0011110111100','0001111111000','0000111110000','0000000000000']),
+      mk(['0000000000000','0000011100000','0001111111000','0011110111100','0111111111110','1110111110111','1100000000011'])
+    ],
+    cloud: mk(['00011100000','00111110110','01111111111','11111111111']),
+    boulder: mk([
+      '....1111....','..11111111..','.1112111111.','.1122111111.','111111111211','111111112211',
+      '111211111111','112211111111','.1111111121.','.1111111111.','..11111111..','....1111....'
+    ], { '1': '#f1f1ec', '2': '#6b6e72' }),
+    coin: [
+      mk(['.ggg.','gllgg','glggd','gggdd','.gdd.'], COIN),
+      mk(['..g..','.glg.','.gld.','.ggd.','..d..'], COIN)
+    ]
+  };
+
+  // ---------- player ----------
+  const ME = { duckW: SPR.duck.w, duckH: SPR.duck.h };
+  const COIN_POINTS = 10;
+
+  // ---------- world ----------
+  const W = 400, H = 150, GROUND = 128, PX = 52;
+  const GRAV = 1150, V1 = 340, V2 = 300;
+  const SPEED0 = 140, ACCEL = 3.2, SPEEDMAX = 330;
+  const HARD_AT = 1000, HARD_SPEEDMAX = 410;       // score where hard mode starts, and its top speed
+  const EXTREME_AT = 2500, EXTREME_SPEEDMAX = 450; // the tier after that
+  const FOOT = 4.5, BODY = 3.5, STEP = 3, STAND_H = 23;
+  const DEATH = {
+    crate: 'You ran into the side of a crate',
+    spike: 'You hit the spikes',
+    fly: 'A flying eye got you',
+    boulder: 'A boulder flattened you',
+    fall: 'You fell down a gap'
+  };
+
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  const scoreEl = document.getElementById('score');
+  const hiEl = document.getElementById('hi');
+  const hudCoins = document.getElementById('hudCoins');
+  const overlay = document.getElementById('overlay');
+  const modeEl = document.getElementById('mode');
+  const bannerEl = document.getElementById('banner');
+  const bannerBig = document.getElementById('bannerBig');
+  const bannerSmall = document.getElementById('bannerSmall');
+  const msgBig = document.getElementById('msgBig');
+  const msgSmall = document.getElementById('msgSmall');
+
+  let hi = Number(store.get('squishrun-hi', 0)) || 0;
+
+  let state = 'ready';
+  let hard, extreme, bannerT, runMs = 0;
+  let speed, dist, score, y, vy, onGround, jumps, dbl, airT, runT, landT, duckT, coyote, overAt,
+      gapLeft, night, nightFade, lastMilestone, jumpBuffer, shakeT, shakeAmp, dustT, runCoins;
+  let obstacles = [], clouds = [], pebbles = [], parts = [], stars = [];
+  let duckHeld = false;
+
+  function reset() {
+    speed = SPEED0; dist = 0; score = 0;
+    y = 0; vy = 0; onGround = true; jumps = 0; dbl = false;
+    airT = 0; runT = 0; landT = 0; duckT = 0; coyote = 0; jumpBuffer = 0;
+    shakeT = 0; shakeAmp = 0; dustT = 0; runCoins = 0;
+    gapLeft = 260; night = false; nightFade = 0; lastMilestone = 0;
+    hard = false; extreme = false; bannerT = 0; runMs = 0;
+    modeEl.textContent = 'Hard';
+    modeEl.hidden = true; bannerEl.hidden = true;
+    obstacles = []; parts = [];
+  }
+  for (let i = 0; i < 4; i++) clouds.push({ x: Math.random() * W, y: 18 + Math.random() * 50 });
+  for (let i = 0; i < 46; i++) pebbles.push({ x: Math.random() * W, y: GROUND + 3 + Math.floor(Math.random() * 14), w: Math.random() < 0.25 ? 2 : 1 });
+  for (let i = 0; i < 44; i++) stars.push({ x: Math.random() * W, y: 6 + Math.random() * 90, tw: Math.random() * 6.28, sp: 0.6 + Math.random() * 1.6 });
+  reset();
+
+  const pad = n => String(Math.floor(n)).padStart(5, '0');
+  function hud() {
+    scoreEl.textContent = pad(score);
+    hiEl.textContent = 'HI ' + pad(hi);
+    hudCoins.textContent = runCoins;
+  }
+  hud();
+
+  // ---------- sound ----------
+  let ac = null, muted = !!store.get('squishrun-muted', false);
+  const muteBtn = document.getElementById('mute');
+  function syncMute() { muteBtn.textContent = muted ? 'Effects off' : 'Effects on'; muteBtn.setAttribute('aria-pressed', String(!muted)); }
+  syncMute();
+  muteBtn.addEventListener('click', () => {
+    muted = !muted; syncMute(); store.set('squishrun-muted', muted);
+    muteBtn.blur(); canvas.focus({ preventScroll: true }); // so Space jumps instead of toggling sound
+  });
+
+  // Background music: a looping track published next to the page. Browsers only allow it to
+  // start after the player interacts, so it begins on the first jump, tap or button press.
+  const music = new Audio('music.mp3');
+  music.loop = true;
+  music.volume = 0.45;
+  music.preload = 'auto';
+  if ('preservesPitch' in music) music.preservesPitch = true;
+  let musicOn = store.get('squishrun-music', true) !== false;
+  const musicBtn = document.getElementById('music');
+  function syncMusic() { musicBtn.textContent = musicOn ? 'Music on' : 'Music off'; musicBtn.setAttribute('aria-pressed', String(musicOn)); }
+  function playMusic() { if (musicOn && music.paused) music.play().catch(() => {}); }
+  function setTempo(rate) { music.playbackRate = rate; }
+  syncMusic();
+  musicBtn.addEventListener('click', () => {
+    musicOn = !musicOn; syncMusic(); store.set('squishrun-music', musicOn);
+    if (musicOn) playMusic(); else music.pause();
+    musicBtn.blur(); canvas.focus({ preventScroll: true });
+  });
+  function audio() {
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (ac && ac.state === 'suspended') ac.resume();
+    playMusic();
+  }
+  function beep(f1, f2, dur, type = 'square', vol = 0.05, delay = 0) {
+    if (muted || !ac) return;
+    const t = ac.currentTime + delay;
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(f1, t);
+    o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(ac.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  const sfx = {
+    jump: () => beep(320, 640, 0.09),
+    dbl: () => { beep(520, 1040, 0.08); beep(780, 1300, 0.07, 'square', 0.04, 0.05); },
+    squish: () => beep(220, 110, 0.06, 'triangle', 0.08),
+    land: () => beep(140, 90, 0.04, 'triangle', 0.06),
+    bonk: () => beep(180, 120, 0.07, 'square', 0.05),
+    coin: () => { beep(988, 988, 0.05, 'square', 0.035); beep(1319, 1319, 0.08, 'square', 0.035, 0.05); },
+    point: () => { beep(880, 880, 0.06, 'square', 0.035); beep(1320, 1320, 0.09, 'square', 0.035, 0.07); },
+    die: () => beep(300, 60, 0.35, 'sawtooth', 0.06),
+    fall: () => beep(600, 80, 0.5, 'triangle', 0.08),
+    hard: () => [440, 330, 440, 330, 660].forEach((f, i) => beep(f, f * 0.98, 0.11, 'sawtooth', 0.045, i * 0.12))
+  };
+
+  // ---------- effects ----------
+  function puff(x, py, n, spread, up, down = 0, color) {
+    for (let i = 0; i < n; i++) {
+      parts.push({
+        x: x + (Math.random() * 6 - 3), y: py - 1,
+        vx: (Math.random() * 2 - 1) * spread,
+        vy: down ? Math.random() * down : -Math.random() * up,
+        life: 0.22 + Math.random() * 0.22, t: 0, c: color
+      });
+    }
+  }
+  function shake(amp, t) { shakeAmp = Math.max(shakeAmp, amp); shakeT = Math.max(shakeT, t); }
+  function updateFx(dt, worldSpeed) {
+    for (const p of parts) {
+      p.t += dt;
+      p.vy += 260 * dt;
+      p.x += (p.vx - worldSpeed) * dt;
+      p.y += p.vy * dt;
+    }
+    parts = parts.filter(p => p.t < p.life);
+    shakeT = Math.max(0, shakeT - dt);
+    if (shakeT === 0) shakeAmp = 0;
+    nightFade += ((night ? 1 : 0) - nightFade) * Math.min(1, dt * 1.5);
+  }
+
+  // ---------- input ----------
+  function press() {
+    audio();
+    if (state === 'paused') { state = 'play'; overlay.hidden = true; return; }
+    if (state === 'ready') { start(); doJump(); return; }
+    if (state === 'over') { if (performance.now() - overAt > 400) start(); return; }
+    doJump();
+  }
+  function doJump() {
+    const feet = GROUND - y;
+    if (onGround || coyote > 0) {
+      vy = V1; onGround = false; coyote = 0; jumps = 1; dbl = false; airT = 0;
+      sfx.jump(); puff(PX, feet, 3, 30, 20);
+    } else if (jumps < 2) {
+      vy = V2; jumps = 2; dbl = true; airT = 0;
+      sfx.dbl(); puff(PX, feet, 6, 70, 0, 40);
+    } else {
+      jumpBuffer = 0.12;
+    }
+  }
+  function setDuck(on) {
+    if (on && !duckHeld && onGround && state === 'play') { duckT = 0; sfx.squish(); puff(PX, GROUND - y, 4, 50, 10); }
+    duckHeld = on;
+    bDuck.classList.toggle('held', on);
+  }
+  function start() {
+    postForm.hidden = true; pendingRun = null;
+    setTempo(1);
+    reset(); state = 'play'; overlay.hidden = true;
+  }
+
+  // Keys are matched by their physical position (e.code), so W, S and Space work with
+  // Caps Lock on and on any keyboard layout; e.key is the fallback for older browsers.
+  const JUMP_KEYS = ['Space', 'KeyW', 'ArrowUp'], DUCK_KEYS = ['KeyS', 'ArrowDown'];
+  const keyIs = (e, codes, keys) => codes.includes(e.code) || keys.includes((e.key || '').toLowerCase());
+  const isJump = e => keyIs(e, JUMP_KEYS, [' ', 'w', 'arrowup']);
+  const isDuck = e => keyIs(e, DUCK_KEYS, ['s', 'arrowdown']);
+  const typing = e => e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement;
+  const embedded = window.parent !== window;
+  if (embedded) document.documentElement.classList.add('embedded');
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && embedded) { window.parent.postMessage({ type: 'squish-run:close' }, location.origin); return; }
+    if (typing(e) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (isJump(e)) {
+      e.preventDefault(); if (!e.repeat) press();
+    } else if (isDuck(e)) {
+      e.preventDefault(); audio(); setDuck(true);
+    }
+  });
+  window.addEventListener('keyup', e => { if (!typing(e) && isDuck(e)) setDuck(false); });
+  // Keep keyboard focus on the game: clicking it focuses it, and buttons never hold focus.
+  canvas.addEventListener('pointerdown', e => { e.preventDefault(); canvas.focus({ preventScroll: true }); press(); });
+  const bJump = document.getElementById('bJump');
+  const bDuck = document.getElementById('bDuck');
+  bJump.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+  bJump.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); press(); } });
+  bDuck.addEventListener('pointerdown', e => { e.preventDefault(); audio(); bDuck.setPointerCapture?.(e.pointerId); setDuck(true); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => bDuck.addEventListener(ev, () => setDuck(false)));
+  // If the game loses focus mid-run (a click elsewhere, another tab), pause instead of
+  // letting the run end with no controls.
+  window.addEventListener('blur', () => {
+    setDuck(false);
+    if (state === 'play') {
+      state = 'paused';
+      music.pause();
+      msgBig.textContent = 'Paused';
+      msgSmall.textContent = 'Click the game, then press Space or W to keep going.';
+      overlay.hidden = false;
+    }
+  });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) window.dispatchEvent(new Event('blur')); });
+
+  // ---------- spawning ----------
+  const rint = n => Math.floor(Math.random() * n);
+  const crate = (dx, lift, wide, tall, pillar = false) => ({ kind: 'crate', dx, lift, w: 10 * wide, h: 10 * tall, wide, tall, pillar });
+  const spikes = (dx, lift, n) => ({ kind: 'spike', dx, lift, w: 7 * n, h: 8, n });
+  const pit = (dx, w) => ({ kind: 'pit', dx, lift: 0, w, h: 0 });
+  const coin = (dx, lift) => ({ kind: 'coin', dx: Math.round(dx), lift: Math.round(lift), w: 5, h: 5, t: Math.random() });
+
+  function spawn() {
+    const x0 = W + 10;
+    const table = [['spikes', 3], ['crates', 3]];
+    if (score > 60) table.push(['pit', 3]);
+    if (score > 160) table.push(['stairs', 2]);
+    if (score > 220) table.push(['fly', 2]);
+    if (score > 280) table.push(['island', 2]);
+    if (score > 360) table.push(['ledge', 2]);
+    if (score > 520) table.push(['spikecrate', 1]);
+    if (hard) table.push(['bobfly', 3], ['tower', 2], ['widepit', 2], ['fly', 2]);
+    if (extreme) table.push(['boulder', 3], ['bouncer', 2], ['pitchain', 3], ['skyway', 3]);
+    let roll = Math.random() * table.reduce((s, t) => s + t[1], 0), kind = table[0][0];
+    for (const [k, wt] of table) { if ((roll -= wt) < 0) { kind = k; break; } }
+
+    let span = 0, top = 0, ownCoins = false;
+    const add = o => {
+      obstacles.push(Object.assign({ x: x0 + o.dx }, o));
+      span = Math.max(span, o.dx + o.w);
+      if (o.kind !== 'pit' && o.kind !== 'coin') top = Math.max(top, o.lift + o.h);
+    };
+
+    switch (kind) {
+      case 'spikes':
+        add(spikes(0, 0, 1 + rint(score > 120 ? 3 : 2)));
+        break;
+      case 'crates': {
+        const tall = 1 + rint(score > 500 ? 3 : score > 80 ? 2 : 1);
+        const wide = 1 + (Math.random() < (score > 300 ? 0.45 : 0.2) ? 1 : 0);
+        add(crate(0, 0, wide, tall));
+        break;
+      }
+      case 'pit': {
+        const maxW = Math.min(66, 28 + score / 20);
+        add(pit(0, Math.round(20 + Math.random() * (maxW - 20))));
+        break;
+      }
+      case 'stairs': {
+        const sw = speed > 220 ? 4 : 3;
+        add(crate(0, 0, sw, 1));
+        add(crate(sw * 10, 0, sw, 2));
+        if (score > 300 && Math.random() < 0.5) {
+          const gw = 40 + rint(24);
+          add(pit(sw * 20, gw));
+          add(crate(sw * 20 + gw, 0, sw, 2));
+        }
+        break;
+      }
+      case 'fly': {
+        const lifts = score > 450 ? [0, 9, 9, 30] : [0, 9, 30];
+        add({ kind: 'fly', dx: 0, lift: lifts[rint(lifts.length)], w: 13, h: 7, t: Math.random() });
+        break;
+      }
+      case 'island': {
+        const pw = 100 + rint(36);
+        add(pit(0, pw));
+        add(crate(Math.round(pw / 2 - 10), 0, 2, 1, true));
+        break;
+      }
+      case 'ledge': {
+        const n = 3 + rint(3);
+        const lift = Math.random() < 0.5 ? 9 : 18;
+        add(crate(0, lift, n, 1));
+        if (Math.random() < 0.5) add(spikes(5, 0, Math.floor((n * 10 - 10) / 7)));
+        break;
+      }
+      case 'spikecrate':
+        add(crate(0, 0, 2, 1));
+        add(spikes(3, 10, 2));
+        break;
+      // hard mode only
+      case 'bobfly': {
+        // a flying eye that bobs between ground level and head height
+        const o = { kind: 'fly', dx: 0, lift: 24, w: 13, h: 7, t: Math.random() * 6, base: 12, amp: 12 };
+        add(o);
+        break;
+      }
+      case 'tower':
+        add(spikes(0, 0, 2));
+        add(crate(14, 0, 3, 3));
+        add(spikes(44, 0, 2));
+        break;
+      case 'widepit':
+        add(pit(0, 120 + rint(50)));
+        break;
+      // extreme only
+      case 'boulder':   // rolls in faster than the ground moves
+        add({ kind: 'boulder', dx: 0, lift: 0, w: 12, h: 12, t: 0, roll: 1.35, vy: 0 });
+        break;
+      case 'bouncer':   // bounces as it comes
+        add({ kind: 'boulder', dx: 0, lift: 0, w: 12, h: 12, t: 0, roll: 1.15, vy: 0, bounce: 30 });
+        break;
+      case 'pitchain': { // three or four gaps with small patches of ground between them
+        let x = 0;
+        const n = 3 + rint(2);
+        for (let i = 0; i < n; i++) {
+          const w = 40 + rint(30);
+          add(pit(x, w));
+          x += w + 48 + rint(24);
+        }
+        break;
+      }
+      case 'skyway': {  // a long gap with floating platforms at changing heights above it
+        const n = 3 + rint(3);
+        let x = 30, lift = 6 + rint(2) * 8;
+        const segs = [];
+        for (let i = 0; i < n; i++) {
+          if (i > 0) lift = Math.max(4, Math.min(44, lift + [-24, -14, 14, 14, 24][rint(5)]));
+          const wide = 18 + rint(6);
+          segs.push({ x, lift, wide });
+          x += wide * 10 + 40 + rint(26);
+        }
+        const last = segs[segs.length - 1];
+        add(pit(0, last.x + last.wide * 10 + 20));
+        for (const g of segs) {
+          add(crate(g.x, g.lift, g.wide, 1));
+          if (Math.random() < 0.6) for (let i = 0; i < 3; i++) add(coin(g.x + g.wide * 5 - 14 + i * 12, g.lift + 15));
+        }
+        ownCoins = true;
+        break;
+      }
+    }
+
+    // coins: an arc over the obstacle, or a short trail on the ground after it
+    const r = ownCoins ? 1 : Math.random();
+    if (r < 0.45) {
+      const base = top + 7, peak = Math.min(62, top + 24), x1 = -16, x2 = span + 12;
+      for (let i = 0; i < 5; i++) {
+        const t = i / 4;
+        add(coin(x1 + (x2 - x1) * t, base + (peak - base) * Math.sin(Math.PI * t)));
+      }
+    } else if (r < 0.7) {
+      const sx = span + 28;
+      for (let i = 0; i < 4; i++) add(coin(sx + i * 11, 4));
+    }
+
+    const minGap = extreme ? speed * 0.44 + 20 : hard ? speed * 0.48 + 24 : speed * 0.6 + 30;
+    gapLeft = span + minGap + Math.random() * speed * (hard ? 0.6 : 0.85);
+  }
+
+  // ---------- collision helpers ----------
+  // Highest surface under the feet that is no higher than maxTop (ground = 0, crates = their top).
+  function supportAt(maxTop) {
+    let best = -Infinity;
+    const overPit = obstacles.some(o => o.kind === 'pit' && o.x < PX - 2 && o.x + o.w > PX + 2);
+    if (!overPit && maxTop >= 0) best = 0;
+    for (const o of obstacles) {
+      if (o.kind !== 'crate') continue;
+      const top = o.lift + o.h;
+      if (o.x < PX + FOOT && o.x + o.w > PX - FOOT && top <= maxTop && top > best) best = top;
+    }
+    return best;
+  }
+  const insidePit = () => obstacles.some(o => o.kind === 'pit' && o.x <= PX - BODY && o.x + o.w >= PX + BODY);
+
+  function playerBox() {
+    if (onGround && duckHeld) {
+      return { x: PX - ME.duckW / 2 + 3, y: GROUND - y - ME.duckH, w: ME.duckW - 6, h: ME.duckH };
+    }
+    const h = onGround ? 24 : 22;
+    return { x: PX - 4.5, y: GROUND - y - h, w: 9, h: h - 1 };
+  }
+  function obsBox(o) {
+    const top = GROUND - o.lift - o.h;
+    if (o.kind === 'spike') return { x: o.x + 1.5, y: top + 2, w: o.w - 3, h: o.h - 2 };
+    if (o.kind === 'coin') return { x: o.x - 2, y: top - 2, w: o.w + 4, h: o.h + 4 };
+    return { x: o.x + 2, y: top + 1, w: o.w - 4, h: o.h - 2 };
+  }
+  const hit = (a, b) => a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+  function land(hard) {
+    vy = 0; onGround = true; jumps = 0; dbl = false; landT = 0.09;
+    sfx.land();
+    puff(PX, GROUND - y, hard ? 7 : 4, hard ? 55 : 40, hard ? 30 : 18);
+    if (hard) shake(1.5, 0.12);
+    if (duckHeld) duckT = 0;
+    if (jumpBuffer > 0) { jumpBuffer = 0; doJump(); }
+  }
+
+  // ---------- update ----------
+  function update(dt) {
+    runMs += dt * 1000;
+    const cap = extreme ? EXTREME_SPEEDMAX : hard ? HARD_SPEEDMAX : SPEEDMAX;
+    speed = Math.min(cap, speed + ACCEL * (extreme ? 1.7 : hard ? 1.4 : 1) * dt);
+    if (!hard && score >= HARD_AT) {
+      hard = true; bannerT = 2.4; setTempo(1.06);
+      bannerBig.textContent = 'Hard mode'; bannerSmall.textContent = 'Faster, tighter, meaner';
+      modeEl.hidden = false; bannerEl.hidden = false;
+      sfx.hard(); shake(2.5, 0.35);
+    }
+    if (!extreme && score >= EXTREME_AT) {
+      extreme = true; bannerT = 2.6; setTempo(1.12);
+      bannerBig.textContent = 'Extreme'; bannerSmall.textContent = 'Boulders, gap chains and sky paths';
+      modeEl.textContent = 'Extreme';
+      bannerEl.hidden = false;
+      sfx.hard(); shake(3.5, 0.45);
+    }
+    if (bannerT > 0) { bannerT -= dt; if (bannerT <= 0) bannerEl.hidden = true; }
+    dist += speed * dt;
+    score = dist / 10 + runCoins * COIN_POINTS;
+
+    const m = Math.floor(score / 100);
+    if (m > lastMilestone) {
+      lastMilestone = m; sfx.point();
+      scoreEl.classList.remove('flash'); void scoreEl.offsetWidth; scoreEl.classList.add('flash');
+      if (m % 7 === 0) night = !night;
+    }
+
+    // world moves first
+    gapLeft -= speed * dt;
+    if (gapLeft <= 0) spawn();
+    for (const o of obstacles) {
+      o.x -= speed * dt * (o.kind === 'fly' ? 1.08 : o.roll || 1);
+      if (o.kind === 'fly' || o.kind === 'coin' || o.kind === 'boulder') o.t += dt;
+      if (o.kind === 'boulder') {
+        const overPit = obstacles.some(p => p.kind === 'pit' && p.x < o.x + 4 && p.x + p.w > o.x + 8);
+        if (overPit || o.vy) { o.vy -= GRAV * dt; o.lift += o.vy * dt; }       // drops into gaps
+        else if (o.bounce) o.lift = Math.abs(Math.sin(o.t * 4.2)) * o.bounce;
+        if (o.lift < -40) o.gone = true;
+      }
+      if (o.amp) o.lift = Math.round(o.base + o.amp * Math.sin(o.t * 3.2));
+    }
+    obstacles = obstacles.filter(o => o.x + o.w > -10 && !o.got && !o.gone);
+
+    // then the player
+    const prevY = y;
+    coyote = Math.max(0, coyote - dt);
+    jumpBuffer = Math.max(0, jumpBuffer - dt);
+    if (!onGround) {
+      airT += dt;
+      vy -= GRAV * (duckHeld ? 2.8 : 1) * dt;
+      y += vy * dt;
+    }
+    const floor = supportAt(prevY + STEP);
+    if (onGround) {
+      if (floor < y - 0.5) { onGround = false; vy = 0; jumps = 0; coyote = 0.09; airT = 0; }
+      else y = floor;
+    } else if (vy <= 0 && y <= floor) {
+      const hard = vy < -430;
+      y = floor;
+      land(hard);
+    }
+
+    // crate sides and undersides
+    const ph = onGround && duckHeld ? ME.duckH : STAND_H;
+    for (const o of obstacles) {
+      if (o.kind !== 'crate' || !(o.x < PX + BODY && o.x + o.w > PX - BODY)) continue;
+      const top = o.lift + o.h, bot = o.pillar ? -200 : o.lift;
+      if (y < top - 0.5 && y + ph > bot) {
+        if (!onGround && vy > 0 && prevY + ph <= bot + 4 && bot - ph >= 0) {
+          y = bot - ph; vy = 0; shake(1, 0.08); sfx.bonk();
+        } else { die('crate'); return; }
+      }
+    }
+
+    // gaps
+    if (y < -2 && !insidePit()) { die('fall'); return; }
+    if (y < -30) { die('fall'); return; }
+
+    // spikes, flyers, coins
+    const pb = playerBox();
+    for (const o of obstacles) {
+      if (o.kind === 'coin') {
+        if (hit(pb, obsBox(o))) {
+          o.got = true; runCoins++;
+          sfx.coin();
+          puff(o.x + 2, GROUND - o.lift - 2, 5, 40, 40, 0, '#f2c14e');
+        }
+      } else if ((o.kind === 'spike' || o.kind === 'fly' || o.kind === 'boulder') && hit(pb, obsBox(o))) { die(o.kind); return; }
+    }
+
+    // timers and scenery
+    landT = Math.max(0, landT - dt);
+    duckT += dt;
+    runT += dt * (speed / SPEED0);
+    if (onGround && !duckHeld) {
+      dustT += dt;
+      if (dustT > 0.2) { dustT = 0; parts.push({ x: PX - 4, y: GROUND - y - 1, vx: -25, vy: -12, life: 0.25, t: 0 }); }
+    }
+    for (const c of clouds) {
+      c.x -= speed * 0.12 * dt;
+      if (c.x < -20) { c.x = W + Math.random() * 120; c.y = 18 + Math.random() * 50; }
+    }
+    for (const s of stars) {
+      s.x -= speed * 0.04 * s.sp * dt;
+      if (s.x < -2) { s.x = W + 2; s.y = 6 + Math.random() * 90; }
+    }
+    for (const p of pebbles) {
+      p.x -= speed * dt;
+      if (p.x < -2) { p.x += W + 4; p.y = GROUND + 3 + Math.floor(Math.random() * 14); }
+    }
+    hud();
+  }
+
+  function die(cause) {
+    state = 'over'; overAt = performance.now(); setDuck(false);
+    if (cause === 'fall') { sfx.fall(); shake(2, 0.2); }
+    else { sfx.die(); shake(3.5, 0.3); puff(PX, GROUND - y - 12, 12, 90, 80); }
+    if (score > hi) { hi = Math.floor(score); store.set('squishrun-hi', hi); }
+    hud();
+    msgBig.textContent = 'Game over';
+    const got = runCoins ? ` You grabbed ${runCoins} coin${runCoins === 1 ? '' : 's'} for ${runCoins * COIN_POINTS} bonus points.` : '';
+    msgSmall.textContent = DEATH[cause] + '.' + got + ' Press space or tap to run again.';
+    overlay.hidden = false;
+    if (offerPost(Math.floor(score), Math.round(runMs))) msgSmall.textContent += ' Post your new best below the game.';
+    loadBoard();
+  }
+
+  // ---------- draw ----------
+  let clock = 0;
+  function poseNow() {
+    if (state === 'over') return ['dead', 0];
+    if (state === 'ready') return ['idle', Math.floor(clock * 1.6)];
+    if (onGround && duckHeld) return [duckT < 0.06 ? 'duck2' : 'duck', 0];
+    if (!onGround) {
+      if (dbl && vy > -60) return ['spin', Math.floor(airT * 16)];
+      if (!dbl && vy > 0 && airT < 0.07) return ['crouch', 0];
+      if (vy > 110) return ['up', 0];
+      if (vy > -110) return ['apex', 0];
+      return ['fall', Math.floor(airT * 8)];
+    }
+    if (landT > 0) return ['crouch', 0];
+    return ['run', Math.floor(runT * 14)];
+  }
+
+  function drawOrig(pose, k, foot) {
+    const s = pose === 'run' ? SPR.run[k % SPR.run.length]
+      : pose === 'idle' ? SPR.idle[k % SPR.idle.length]
+      : pose === 'spin' ? SPR.spin[k % SPR.spin.length]
+      : SPR[pose === 'crouch' ? 'land' : pose];
+    ctx.drawImage(s.c, Math.round(PX - s.w / 2), Math.round(foot - s.h));
+  }
+
+  const FG = '#f1f1ec', BG = '#0c0d0e';
+  function drawCrates(o) {
+    const x = Math.round(o.x), top = Math.round(GROUND - o.lift - o.h);
+    for (let i = 0; i < o.wide; i++) {
+      for (let j = 0; j < o.tall; j++) ctx.drawImage(SPR.crate.c, x + i * 10, top + j * 10);
+      if (o.pillar) for (let yy = top + o.h; yy < H; yy += 10) ctx.drawImage(SPR.crate.c, x + i * 10, yy);
+    }
+  }
+
+  function draw() {
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+    ctx.save();
+    if (shakeT > 0) ctx.translate(Math.round((Math.random() * 2 - 1) * shakeAmp), Math.round((Math.random() * 2 - 1) * shakeAmp));
+
+    // sky: clouds by day, twinkling stars by night
+    if (nightFade < 0.99) {
+      ctx.globalAlpha = 0.28 * (1 - nightFade);
+      for (const c of clouds) ctx.drawImage(SPR.cloud.c, Math.round(c.x), Math.round(c.y));
+    }
+    if (nightFade > 0.01) {
+      ctx.fillStyle = FG;
+      for (const s of stars) {
+        const b = 0.5 + 0.5 * Math.sin(clock * 3 * s.sp + s.tw);
+        ctx.globalAlpha = nightFade * (0.25 + 0.75 * b);
+        const sx = Math.round(s.x), sy = Math.round(s.y);
+        ctx.fillRect(sx, sy, 1, 1);
+        if (b > 0.92) { ctx.fillRect(sx - 1, sy, 3, 1); ctx.fillRect(sx, sy - 1, 1, 3); }
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.fillStyle = FG;
+    ctx.fillRect(-4, GROUND, W + 8, 1);
+    ctx.globalAlpha = 0.55;
+    for (const p of pebbles) ctx.fillRect(Math.round(p.x), p.y, p.w, 1);
+    ctx.globalAlpha = 1;
+
+    // gaps: cut the ground away and mark the cliff edges
+    for (const o of obstacles) {
+      if (o.kind !== 'pit') continue;
+      const x = Math.round(o.x);
+      ctx.fillStyle = BG;
+      ctx.fillRect(x, GROUND, o.w, H - GROUND + 4);
+      ctx.fillStyle = FG;
+      for (let k = 0; k < 14; k += 2) {
+        ctx.globalAlpha = 1 - k / 14;
+        ctx.fillRect(x, GROUND + k, 1, 1);
+        ctx.fillRect(x + o.w - 1, GROUND + k, 1, 1);
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    for (const o of obstacles) {
+      const top = Math.round(GROUND - o.lift - o.h), x = Math.round(o.x);
+      if (o.kind === 'spike') for (let i = 0; i < o.n; i++) ctx.drawImage(SPR.spike.c, x + i * 7, top);
+      else if (o.kind === 'crate') drawCrates(o);
+      else if (o.kind === 'fly') ctx.drawImage(SPR.fly[Math.floor(o.t * 6) % 2].c, x, top);
+      else if (o.kind === 'boulder') {
+        ctx.save(); ctx.translate(x + 6, top + 6); ctx.rotate(-(Math.floor(o.t * 12) % 4) * Math.PI / 2);
+        ctx.drawImage(SPR.boulder.c, -6, -6); ctx.restore();
+      }
+      else if (o.kind === 'coin') ctx.drawImage(SPR.coin[Math.floor(o.t * 5) % 2].c, x, top + (Math.floor(o.t * 3) % 2));
+    }
+
+    for (const p of parts) {
+      ctx.fillStyle = p.c || FG;
+      ctx.globalAlpha = Math.max(0, 1 - p.t / p.life);
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), 1, 1);
+    }
+    ctx.globalAlpha = 1;
+
+    const [pose, k] = poseNow();
+    drawOrig(pose, k, GROUND - y);
+    ctx.restore();
+  }
+
+  // ---------- leaderboard (kahncept.com /api/squish/scores, stored in Supabase) ----------
+  const API = '/api/squish/scores';
+  const boardList = document.getElementById('boardList');
+  const boardNote = document.getElementById('boardNote');
+  const boardMine = document.getElementById('boardMine');
+  const postForm = document.getElementById('postForm');
+  const postName = document.getElementById('postName');
+  const postBtn = document.getElementById('postBtn');
+  const postMsg = document.getElementById('postMsg');
+  const NAME_OK = /^[A-Za-z0-9 _.-]{2,12}$/;
+  let myName = String(store.get('squishrun-name', '') || '');
+  let postedBest = Number(store.get('squishrun-posted', 0)) || 0;
+  let pendingRun = null; // the run waiting to be posted: { score, runMs }
+  postName.value = myName;
+
+  async function loadBoard() {
+    try {
+      const r = await fetch(API, { cache: 'no-store' });
+      if (!r.ok) throw new Error(String(r.status));
+      const { scores } = await r.json();
+      renderBoard(Array.isArray(scores) ? scores : []);
+    } catch (e) {
+      boardNote.textContent = 'The leaderboard is offline right now. Your own high score still counts.';
+    }
+  }
+
+  function renderBoard(rows) {
+    const mine = n => myName && String(n).toLowerCase() === myName.toLowerCase();
+    boardList.replaceChildren(...rows.map((r, i) => {
+      const li = document.createElement('li');
+      li.className = 'board-row' + (mine(r.name) ? ' me' : '');
+      const rank = document.createElement('span'); rank.className = 'rank'; rank.textContent = i + 1;
+      const who = document.createElement('span'); who.className = 'who'; who.textContent = r.name;
+      if (mine(r.name)) { const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = ' (you)'; who.append(tag); }
+      const pts = document.createElement('span'); pts.className = 'pts'; pts.textContent = Math.floor(r.best).toLocaleString();
+      li.append(rank, who, pts);
+      return li;
+    }));
+    boardNote.textContent = rows.length ? '' : 'No scores yet. Finish a run and post the first one.';
+    boardMine.hidden = !(postedBest > 0 && !rows.some(r => mine(r.name)));
+    if (!boardMine.hidden) boardMine.textContent = `Your best on the board: ${postedBest.toLocaleString()}. Beat the top 10 to show up here.`;
+  }
+
+  // After a run that beats what this browser has posted before, offer to post it.
+  function offerPost(score, runMs) {
+    if (score < 50 || score <= postedBest) { postForm.hidden = true; pendingRun = null; return false; }
+    pendingRun = { score, runMs };
+    postMsg.textContent = `New best: ${score.toLocaleString()}. Post it to the leaderboard?`;
+    postBtn.disabled = false;
+    postForm.hidden = false;
+    return true;
+  }
+
+  postForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!pendingRun) return;
+    const name = postName.value.trim().replace(/\s+/g, ' ');
+    if (!NAME_OK.test(name)) {
+      postMsg.textContent = 'Use 2 to 12 letters, numbers, spaces, dots, dashes or underscores.';
+      postName.focus();
+      return;
+    }
+    postBtn.disabled = true;
+    postMsg.textContent = 'Posting…';
+    try {
+      const r = await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, score: pendingRun.score, runMs: pendingRun.runMs })
+      });
+      const res = await r.json().catch(() => ({}));
+      if (res.accepted) {
+        myName = name; store.set('squishrun-name', name);
+        postedBest = Math.max(postedBest, pendingRun.score); store.set('squishrun-posted', postedBest);
+        pendingRun = null;
+        postMsg.textContent = `Posted as ${name}.`;
+        setTimeout(() => { if (!pendingRun) postForm.hidden = true; }, 2500);
+        loadBoard();
+        canvas.focus({ preventScroll: true });
+      } else {
+        postBtn.disabled = false;
+        postMsg.textContent = res.reason === 'slow' ? 'Easy there. Wait a few seconds, then post again.'
+          : res.reason === 'name' ? 'That name won’t work. Use 2 to 12 letters, numbers, spaces, dots, dashes or underscores.'
+          : res.reason === 'score' ? 'That score couldn’t be posted.'
+          : 'Posting failed. Try again in a moment.';
+      }
+    } catch (err) {
+      postBtn.disabled = false;
+      postMsg.textContent = 'Posting failed. Check your connection and try again.';
+    }
+  });
+  loadBoard();
+
+  let last = 0;
+  function frame(t) {
+    const dt = last ? Math.min(0.033, (t - last) / 1000) : 0;
+    last = t;
+    clock += dt;
+    if (state === 'play') update(dt);
+    else if (state === 'ready') {
+      for (const c of clouds) { c.x -= 6 * dt; if (c.x < -20) c.x = W + 20; }
+    }
+    updateFx(dt, state === 'play' ? speed : 0);
+    draw();
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>

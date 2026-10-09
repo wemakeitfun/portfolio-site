@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ArrowUpRightIcon from "./ArrowUpRightIcon";
+import SquishEasterEgg from "./SquishEasterEgg";
 
 const nav = [
   { href: "/", label: "Home" },
@@ -72,7 +73,10 @@ export default function Footer() {
 
       <div className="mt-16 flex flex-col md:flex-row md:items-center md:justify-between gap-4 pt-8 border-t border-border font-mono text-xs uppercase tracking-widest text-fg-muted">
         <span>© {year} Adam Kahn / Kahncept</span>
-        <span>Built with Claude Code</span>
+        <span className="flex items-end gap-3">
+          Built with Claude Code
+          <SquishEasterEgg />
+        </span>
       </div>
     </footer>
   );
