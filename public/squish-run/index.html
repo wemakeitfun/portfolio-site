@@ -280,6 +280,7 @@
     <div><dt>Gaps</dt><dd>Jump over them, or use a crate pillar in the middle as a stepping stone.</dd></div>
     <div><dt>Hard mode</dt><dd>Starts at 1,000 points. The game speeds up, obstacles bunch together and new ones appear.</dd></div>
     <div><dt>Extreme</dt><dd>Starts at 2,500 points. Rolling and bouncing boulders, chains of gaps, and sky paths to hop up and down across.</dd></div>
+    <div><dt>Insane</dt><dd>Starts at 4,000 points. Staircases to climb: jump onto each step before you run into it.</dd></div>
     <div><dt>Coins</dt><dd>Each one you grab adds 10 bonus points to your score.</dd></div>
   </dl>
 
@@ -345,6 +346,7 @@
   const SPEED0 = 140, ACCEL = 3.2, SPEEDMAX = 330;
   const HARD_AT = 1000, HARD_SPEEDMAX = 410;       // score where hard mode starts, and its top speed
   const EXTREME_AT = 2500, EXTREME_SPEEDMAX = 450; // the tier after that
+  const INSANE_AT = 4000, INSANE_SPEEDMAX = 480;   // and the one after that: stair climbs
   const FOOT = 4.5, BODY = 3.5, STEP = 3, STAND_H = 23;
   const DEATH = {
     crate: 'You ran into the side of a crate',
@@ -371,7 +373,7 @@
   let hi = Number(store.get('squishrun-hi', 0)) || 0;
 
   let state = 'ready';
-  let hard, extreme, bannerT, runMs = 0;
+  let hard, extreme, insane, bannerT, runMs = 0;
   let speed, dist, score, y, vy, onGround, jumps, dbl, airT, runT, landT, duckT, coyote, overAt,
       gapLeft, night, nightFade, lastMilestone, jumpBuffer, shakeT, shakeAmp, dustT, runCoins;
   let obstacles = [], clouds = [], pebbles = [], parts = [], stars = [];
@@ -383,7 +385,7 @@
     airT = 0; runT = 0; landT = 0; duckT = 0; coyote = 0; jumpBuffer = 0;
     shakeT = 0; shakeAmp = 0; dustT = 0; runCoins = 0;
     gapLeft = 260; night = false; nightFade = 0; lastMilestone = 0;
-    hard = false; extreme = false; bannerT = 0; runMs = 0;
+    hard = false; extreme = false; insane = false; bannerT = 0; runMs = 0;
     modeEl.textContent = 'Hard';
     modeEl.hidden = true; bannerEl.hidden = true;
     obstacles = []; parts = [];
@@ -574,6 +576,7 @@
     if (score > 520) table.push(['spikecrate', 1]);
     if (hard) table.push(['bobfly', 3], ['tower', 2], ['widepit', 2], ['fly', 2]);
     if (extreme) table.push(['boulder', 3], ['bouncer', 2], ['pitchain', 3], ['skyway', 3]);
+    if (insane) table.push(['climb', 5]);
     let roll = Math.random() * table.reduce((s, t) => s + t[1], 0), kind = table[0][0];
     for (const [k, wt] of table) { if ((roll -= wt) < 0) { kind = k; break; } }
 
@@ -683,6 +686,27 @@
         ownCoins = true;
         break;
       }
+      // insane only
+      case 'climb': {
+        // Steps 20, 40 (and 60) high, each wide enough that one jump from the step below
+        // lands on it at the current speed. Jump too late and you hit the step's face.
+        const stepW = Math.ceil((speed * 0.56 + 30) / 10);
+        const ups = 2 + rint(2);
+        let x = 0;
+        for (let i = 1; i <= ups; i++) {
+          add(crate(x, 0, stepW, i * 2));
+          for (let c = 0; c < 3; c++) add(coin(x + stepW * 5 + (c - 1) * 12, i * 20 + 6));
+          x += stepW * 10;
+        }
+        if (Math.random() < 0.5) add(spikes(x - stepW * 5, ups * 20, 2)); // a spike patch on the top step
+        for (let i = ups - 1; i >= 1; i--) {   // shorter steps back down
+          const w = 8 + rint(4);
+          add(crate(x, 0, w, i * 2));
+          x += w * 10;
+        }
+        ownCoins = true;
+        break;
+      }
     }
 
     // coins: an arc over the obstacle, or a short trail on the ground after it
@@ -744,8 +768,8 @@
   // ---------- update ----------
   function update(dt) {
     runMs += dt * 1000;
-    const cap = extreme ? EXTREME_SPEEDMAX : hard ? HARD_SPEEDMAX : SPEEDMAX;
-    speed = Math.min(cap, speed + ACCEL * (extreme ? 1.7 : hard ? 1.4 : 1) * dt);
+    const cap = insane ? INSANE_SPEEDMAX : extreme ? EXTREME_SPEEDMAX : hard ? HARD_SPEEDMAX : SPEEDMAX;
+    speed = Math.min(cap, speed + ACCEL * (insane ? 1.9 : extreme ? 1.7 : hard ? 1.4 : 1) * dt);
     if (!hard && score >= HARD_AT) {
       hard = true; bannerT = 2.4; setTempo(1.06);
       bannerBig.textContent = 'Hard mode'; bannerSmall.textContent = 'Faster, tighter, meaner';
@@ -758,6 +782,13 @@
       modeEl.textContent = 'Extreme';
       bannerEl.hidden = false;
       sfx.hard(); shake(3.5, 0.45);
+    }
+    if (!insane && score >= INSANE_AT) {
+      insane = true; bannerT = 2.8; setTempo(1.18);
+      bannerBig.textContent = 'Insane'; bannerSmall.textContent = 'Stair climbs. Jump each step before you hit it';
+      modeEl.textContent = 'Insane';
+      bannerEl.hidden = false;
+      sfx.hard(); shake(4.5, 0.55);
     }
     if (bannerT > 0) { bannerT -= dt; if (bannerT <= 0) bannerEl.hidden = true; }
     dist += speed * dt;
