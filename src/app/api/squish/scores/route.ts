@@ -6,15 +6,15 @@ import { createClient } from "@supabase/supabase-js";
  * The game calls this route so it never holds Supabase credentials. Writes go through the
  * submit_squish_score() database function, which validates the name, rejects impossible
  * scores and rate-limits each visitor (identified by a hash of their IP, never the IP itself).
+ * Only this server can call that function: it uses SUPABASE_SECRET_KEY, a server-only
+ * environment variable, so nobody can post scores around this route.
  */
 export const dynamic = "force-dynamic";
 
-function supabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { persistSession: false } },
-  );
+function supabase(key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!) {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
+    auth: { persistSession: false },
+  });
 }
 
 export async function GET() {
@@ -49,7 +49,10 @@ export async function POST(request: Request) {
     ? createHash("sha256").update(`squish-run:${ip}`).digest("hex").slice(0, 32)
     : null;
 
-  const { data, error } = await supabase().rpc("submit_squish_score", {
+  const secret = process.env.SUPABASE_SECRET_KEY;
+  if (!secret) return Response.json({ accepted: false, reason: "unavailable" }, { status: 503 });
+
+  const { data, error } = await supabase(secret).rpc("submit_squish_score", {
     p_name: name.slice(0, 40),
     p_score: score,
     p_run_ms: runMs,
