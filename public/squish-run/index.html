@@ -280,7 +280,7 @@
     <div><dt>Gaps</dt><dd>Jump over them, or use a crate pillar in the middle as a stepping stone.</dd></div>
     <div><dt>Hard mode</dt><dd>Starts at 1,000 points. The game speeds up, obstacles bunch together and new ones appear.</dd></div>
     <div><dt>Extreme</dt><dd>Starts at 2,500 points. Rolling and bouncing boulders, chains of gaps, and sky paths to hop up and down across.</dd></div>
-    <div><dt>Insane</dt><dd>Starts at 4,000 points. Staircases to climb: jump onto each step before you run into it.</dd></div>
+    <div><dt>Insane</dt><dd>Starts at 4,000 points. Staircases to climb with boulders rolling down them, cracked platforms that crumble under you, and obstacles back to back.</dd></div>
     <div><dt>Coins</dt><dd>Each one you grab adds 10 bonus points to your score.</dd></div>
   </dl>
 
@@ -320,6 +320,9 @@
     crate: mk([
       '1111111111','1000000001','1011111101','1010000101','1010110101',
       '1010110101','1010000101','1011111101','1000000001','1111111111']),
+    crack: mk([
+      '1111111111','1000100001','1011011101','1010001101','1010110101',
+      '1011010101','1010001101','1011101101','1000010001','1111111111']),
     spike: mk(['0001000','0001000','0011100','0011100','0111110','0111110','1111111','1111111']),
     fly: [
       mk(['1100000000011','1110011100111','0111111111110','0011110111100','0001111111000','0000111110000','0000000000000']),
@@ -347,6 +350,7 @@
   const HARD_AT = 1000, HARD_SPEEDMAX = 410;       // score where hard mode starts, and its top speed
   const EXTREME_AT = 2500, EXTREME_SPEEDMAX = 450; // the tier after that
   const INSANE_AT = 4000, INSANE_SPEEDMAX = 480;   // and the one after that: stair climbs
+  const CRUMBLE_T = 0.45; // seconds a crumbling platform holds you before it falls
   const FOOT = 4.5, BODY = 3.5, STEP = 3, STAND_H = 23;
   const DEATH = {
     crate: 'You ran into the side of a crate',
@@ -458,6 +462,8 @@
     point: () => { beep(880, 880, 0.06, 'square', 0.035); beep(1320, 1320, 0.09, 'square', 0.035, 0.07); },
     die: () => beep(300, 60, 0.35, 'sawtooth', 0.06),
     fall: () => beep(600, 80, 0.5, 'triangle', 0.08),
+    crack: () => beep(900, 300, 0.05, 'square', 0.03),
+    crumble: () => beep(220, 60, 0.22, 'sawtooth', 0.04),
     hard: () => [440, 330, 440, 330, 660].forEach((f, i) => beep(f, f * 0.98, 0.11, 'sawtooth', 0.045, i * 0.12))
   };
 
@@ -565,8 +571,7 @@
   const pit = (dx, w) => ({ kind: 'pit', dx, lift: 0, w, h: 0 });
   const coin = (dx, lift) => ({ kind: 'coin', dx: Math.round(dx), lift: Math.round(lift), w: 5, h: 5, t: Math.random() });
 
-  function spawn() {
-    const x0 = W + 10;
+  function spawnPattern(x0) {
     const table = [['spikes', 3], ['crates', 3]];
     if (score > 60) table.push(['pit', 3]);
     if (score > 160) table.push(['stairs', 2]);
@@ -680,7 +685,7 @@
         const last = segs[segs.length - 1];
         add(pit(0, last.x + last.wide * 10 + 20));
         for (const g of segs) {
-          add(crate(g.x, g.lift, g.wide, 1));
+          add(Object.assign(crate(g.x, g.lift, g.wide, 1), { crumble: insane }));
           if (Math.random() < 0.6) for (let i = 0; i < 3; i++) add(coin(g.x + g.wide * 5 - 14 + i * 12, g.lift + 15));
         }
         ownCoins = true;
@@ -694,11 +699,17 @@
         const ups = 2 + rint(2);
         let x = 0;
         for (let i = 1; i <= ups; i++) {
-          add(crate(x, 0, stepW, i * 2));
+          add(Object.assign(crate(x, 0, stepW, i * 2), { crumble: true }));
           for (let c = 0; c < 3; c++) add(coin(x + stepW * 5 + (c - 1) * 12, i * 20 + 6));
           x += stepW * 10;
         }
         if (Math.random() < 0.5) add(spikes(x - stepW * 5, ups * 20, 2)); // a spike patch on the top step
+        // boulders wait on the top step and roll down toward you once they're on screen
+        if (Math.random() < 0.85) {
+          const boulder = (dx, waitX) => add({ kind: 'boulder', dx, lift: ups * 20, w: 12, h: 12, t: 0, roll: 1.4, vy: 0, wait: waitX });
+          boulder(x - 24, W * 0.8);
+          if (Math.random() < 0.35) boulder(x - 14, W * 0.55);
+        }
         for (let i = ups - 1; i >= 1; i--) {   // shorter steps back down
           const w = 8 + rint(4);
           add(crate(x, 0, w, i * 2));
@@ -722,8 +733,18 @@
       for (let i = 0; i < 4; i++) add(coin(sx + i * 11, 4));
     }
 
-    const minGap = extreme ? speed * 0.44 + 20 : hard ? speed * 0.48 + 24 : speed * 0.6 + 30;
-    gapLeft = span + minGap + Math.random() * speed * (hard ? 0.6 : 0.85);
+    return span;
+  }
+
+  function spawn() {
+    let span = spawnPattern(W + 10);
+    // Insane: a second obstacle straight after the first, with no flat ground between them
+    if (insane && Math.random() < 0.45) {
+      const g = 30 + rint(30);
+      span += g + spawnPattern(W + 10 + span + g);
+    }
+    const minGap = insane ? speed * 0.34 + 12 : extreme ? speed * 0.44 + 20 : hard ? speed * 0.48 + 24 : speed * 0.6 + 30;
+    gapLeft = span + minGap + Math.random() * speed * (insane ? 0.4 : hard ? 0.6 : 0.85);
   }
 
   // ---------- collision helpers ----------
@@ -733,7 +754,7 @@
     const overPit = obstacles.some(o => o.kind === 'pit' && o.x < PX - 2 && o.x + o.w > PX + 2);
     if (!overPit && maxTop >= 0) best = 0;
     for (const o of obstacles) {
-      if (o.kind !== 'crate') continue;
+      if (o.kind !== 'crate' || o.falling) continue;
       const top = o.lift + o.h;
       if (o.x < PX + FOOT && o.x + o.w > PX - FOOT && top <= maxTop && top > best) best = top;
     }
@@ -785,7 +806,7 @@
     }
     if (!insane && score >= INSANE_AT) {
       insane = true; bannerT = 2.8; setTempo(1.18);
-      bannerBig.textContent = 'Insane'; bannerSmall.textContent = 'Stair climbs. Jump each step before you hit it';
+      bannerBig.textContent = 'Insane'; bannerSmall.textContent = 'Crumbling steps, falling boulders, no breathing room';
       modeEl.textContent = 'Insane';
       bannerEl.hidden = false;
       sfx.hard(); shake(4.5, 0.55);
@@ -805,14 +826,29 @@
     gapLeft -= speed * dt;
     if (gapLeft <= 0) spawn();
     for (const o of obstacles) {
-      o.x -= speed * dt * (o.kind === 'fly' ? 1.08 : o.roll || 1);
-      if (o.kind === 'fly' || o.kind === 'coin' || o.kind === 'boulder') o.t += dt;
+      o.x -= speed * dt * (o.kind === 'fly' ? 1.08 : o.wait ? 1 : o.roll || 1);
+      if (o.kind === 'fly' || o.kind === 'coin' || (o.kind === 'boulder' && !o.wait)) o.t += dt;
       if (o.kind === 'boulder') {
+        if (o.wait && o.x < o.wait) o.wait = 0;
+        // what's under the boulder: the ground, a gap, or the top of a crate (stair step)
+        const cx = o.x + 6;
         const overPit = obstacles.some(p => p.kind === 'pit' && p.x < o.x + 4 && p.x + p.w > o.x + 8);
-        if (overPit || o.vy) { o.vy -= GRAV * dt; o.lift += o.vy * dt; }       // drops into gaps
-        else if (o.bounce) o.lift = Math.abs(Math.sin(o.t * 4.2)) * o.bounce;
+        let ground = overPit ? -Infinity : 0;
+        for (const c of obstacles) {
+          if (c.kind !== 'crate' || c.falling || c.x > cx || c.x + c.w < cx) continue;
+          const t = c.lift + c.h;
+          if (t <= o.lift + 2 && t > ground) ground = t;
+        }
+        const bouncing = o.bounce && ground === 0 && !o.vy;
+        if (!bouncing && (o.vy || o.lift > ground + 0.5)) {   // drops into gaps and down stair steps
+          o.vy -= GRAV * dt; o.lift += o.vy * dt;
+          if (o.lift <= ground) { o.lift = ground; o.vy = 0; }
+        } else if (bouncing) o.lift = Math.abs(Math.sin(o.t * 4.2)) * o.bounce;
         if (o.lift < -40) o.gone = true;
       }
+      // crumbling platforms shake, then fall
+      if (o.crumbleT != null && !o.falling && (o.crumbleT += dt) > CRUMBLE_T) { o.falling = true; o.vy = 0; sfx.crumble(); }
+      if (o.falling) { o.vy -= GRAV * dt; o.lift += o.vy * dt; if (o.lift < -(o.h + 40)) o.gone = true; }
       if (o.amp) o.lift = Math.round(o.base + o.amp * Math.sin(o.t * 3.2));
     }
     obstacles = obstacles.filter(o => o.x + o.w > -10 && !o.got && !o.gone);
@@ -839,12 +875,21 @@
     // crate sides and undersides
     const ph = onGround && duckHeld ? ME.duckH : STAND_H;
     for (const o of obstacles) {
-      if (o.kind !== 'crate' || !(o.x < PX + BODY && o.x + o.w > PX - BODY)) continue;
+      if (o.kind !== 'crate' || o.falling || !(o.x < PX + BODY && o.x + o.w > PX - BODY)) continue;
       const top = o.lift + o.h, bot = o.pillar ? -200 : o.lift;
       if (y < top - 0.5 && y + ph > bot) {
         if (!onGround && vy > 0 && prevY + ph <= bot + 4 && bot - ph >= 0) {
           y = bot - ph; vy = 0; shake(1, 0.08); sfx.bonk();
         } else { die('crate'); return; }
+      }
+    }
+
+    // crumbling platforms start to give way the moment you land on them
+    if (onGround && y > 0) {
+      for (const o of obstacles) {
+        if (o.crumble && o.crumbleT == null && Math.abs(o.lift + o.h - y) < 0.5 && o.x < PX + FOOT && o.x + o.w > PX - FOOT) {
+          o.crumbleT = 0; sfx.crack();
+        }
       }
     }
 
@@ -928,10 +973,12 @@
 
   const FG = '#f1f1ec', BG = '#0c0d0e';
   function drawCrates(o) {
-    const x = Math.round(o.x), top = Math.round(GROUND - o.lift - o.h);
+    const shakeX = o.crumbleT != null && !o.falling ? (Math.floor(o.crumbleT * 40) % 2 ? 1 : -1) : 0;
+    const x = Math.round(o.x) + shakeX, top = Math.round(GROUND - o.lift - o.h);
+    const tile = o.crumble ? SPR.crack.c : SPR.crate.c;
     for (let i = 0; i < o.wide; i++) {
-      for (let j = 0; j < o.tall; j++) ctx.drawImage(SPR.crate.c, x + i * 10, top + j * 10);
-      if (o.pillar) for (let yy = top + o.h; yy < H; yy += 10) ctx.drawImage(SPR.crate.c, x + i * 10, yy);
+      for (let j = 0; j < o.tall; j++) ctx.drawImage(tile, x + i * 10, top + j * 10);
+      if (o.pillar) for (let yy = top + o.h; yy < H; yy += 10) ctx.drawImage(tile, x + i * 10, yy);
     }
   }
 
