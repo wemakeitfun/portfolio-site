@@ -30,7 +30,7 @@ export function mountRack(els, products, options = {}) {
   stage.appendChild(renderer.domElement);
   const scene = createStudioScene(CONFIG, renderer);
   const camera = new THREE.PerspectiveCamera(CONFIG.rack.fov, 1, 1, 1000);
-  const factory = new DeckFactory(CONFIG, renderer);
+  const factory = new DeckFactory(CONFIG, renderer, { maxTextureHeight: CONFIG.textures.rackMaxHeight });
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const carousel = new Carousel({ config: CONFIG, scene, camera, factory, products, el: stage, reducedMotion });
 
@@ -91,7 +91,7 @@ export function mountRack(els, products, options = {}) {
     drag.moved += Math.abs(dx);
     if (drag.moved > 6 && !drag.active) {
       drag.active = true;
-      stage.setPointerCapture(drag.id);
+      try { stage.setPointerCapture(drag.id); } catch { /* pointer already gone */ }
       stage.style.cursor = 'grabbing';
     }
     if (!drag.active) return;

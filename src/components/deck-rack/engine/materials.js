@@ -94,7 +94,21 @@ function coverFit(tex, deckAspect) {
   tex.offset.set((1 - tex.repeat.x) / 2, (1 - tex.repeat.y) / 2);
 }
 
-export function createGraphicMaterial(url, renderer, deckAspect) {
+// Big uploads (e.g. 1442 × 4970) cost ~28 MB of GPU memory each; a rack of them can
+// crash mobile Safari. Shrink anything taller than maxHeight before it reaches the GPU.
+function downscale(image, maxHeight) {
+  if (!maxHeight || image.height <= maxHeight) return image;
+  const k = maxHeight / image.height;
+  const cv = document.createElement('canvas');
+  cv.width = Math.round(image.width * k);
+  cv.height = maxHeight;
+  const ctx = cv.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(image, 0, 0, cv.width, cv.height);
+  return cv;
+}
+
+export function createGraphicMaterial(url, renderer, deckAspect, maxHeight) {
   const mat = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
     roughness: 0.42,
@@ -105,6 +119,7 @@ export function createGraphicMaterial(url, renderer, deckAspect) {
   loader.load(url, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    tex.image = downscale(tex.image, maxHeight);
     coverFit(tex, deckAspect);
     mat.map = tex;
     mat.needsUpdate = true;

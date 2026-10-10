@@ -4,9 +4,11 @@ import { createSharedMaterials, createGraphicMaterial } from './materials.js';
 
 // Builds the shared geometry/materials once; each Deck only owns its graphic material.
 export class DeckFactory {
-  constructor(config, renderer) {
+  // maxTextureHeight: graphics taller than this are shrunk before upload to the GPU.
+  constructor(config, renderer, { maxTextureHeight } = {}) {
     this.config = config;
     this.renderer = renderer;
+    this.maxTextureHeight = maxTextureHeight;
     const { geometry, shape } = createDeckGeometry(config.deck);
     this.geometry = geometry;
     this.shape = shape;
@@ -28,7 +30,7 @@ export class DeckFactory {
 
   create(product) {
     const m = this.materials;
-    const graphic = createGraphicMaterial(product.graphic, this.renderer, this.shape.W / this.shape.L);
+    const graphic = createGraphicMaterial(product.graphic, this.renderer, this.shape.W / this.shape.L, this.maxTextureHeight);
     this.graphics.push(graphic);
     const mesh = new THREE.Mesh(this.geometry, [m.grip, graphic, m.ply]);
     mesh.castShadow = true;

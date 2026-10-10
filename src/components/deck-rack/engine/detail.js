@@ -29,7 +29,7 @@ export function mountDetail(el, products, hooks = {}) {
   el.appendChild(renderer.domElement);
   const scene = createStudioScene(CONFIG, renderer);
   const camera = new THREE.PerspectiveCamera(24, 1, 1, 1000);
-  const factory = new DeckFactory(CONFIG, renderer);
+  const factory = new DeckFactory(CONFIG, renderer, { maxTextureHeight: CONFIG.textures.detailMaxHeight });
 
   // soft shadow on an invisible wall behind the deck
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.ShadowMaterial({ opacity: 0.12 }));
@@ -105,7 +105,7 @@ export function mountDetail(el, products, hooks = {}) {
     }
     const dx = e.clientX - drag.last;
     drag.moved += Math.abs(dx);
-    if (drag.moved > 4 && !drag.active) { drag.active = true; el.setPointerCapture(drag.id); el.style.cursor = 'grabbing'; }
+    if (drag.moved > 4 && !drag.active) { drag.active = true; try { el.setPointerCapture(drag.id); } catch { /* pointer already gone */ } el.style.cursor = 'grabbing'; }
     if (!drag.active) return;
     const now = performance.now();
     const da = dx * D.dragSpeed;

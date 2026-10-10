@@ -43,6 +43,13 @@ export const CONFIG = {
     shadowOpacity: 0.13,
   },
 
+  // Graphics taller than this (px) are shrunk before they reach the GPU. Many decks on
+  // the rack share memory, so they get less; the detail view shows one deck, sharp.
+  textures: {
+    rackMaxHeight: 2048,
+    detailMaxHeight: 4096,
+  },
+
   rack: {
     fov: 20,
     edgeAngle: Math.PI / 2, // rotation when edge-on (0 = graphic faces viewer)
