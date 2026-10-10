@@ -117,3 +117,24 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Deck rack caption: fade the new deck name in */
+.deck-swap {
+  animation: deck-swap 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+@keyframes deck-swap {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .deck-swap {
+    animation-name: deck-fade;
+  }
+  @keyframes deck-fade {
+    from {
+      opacity: 0;
+    }
+  }
+}

@@ -943,6 +943,7 @@ export default function ProjectForm({
                     >
                       <option value="grid">Grid</option>
                       <option value="slideshow">Slideshow (click to advance)</option>
+                      <option value="decks">3D Deck Rack (skateboards)</option>
                     </select>
                   </label>
                 )}
@@ -965,6 +966,7 @@ export default function ProjectForm({
                     </select>
                   </label>
                 )}
+                {!(sec.type === "media" && sec.style === "decks") && (
                 <label className="space-y-2">
                   <span className={labelCls}>Size</span>
                   <select
@@ -980,7 +982,17 @@ export default function ProjectForm({
                     <option value={25}>25%</option>
                   </select>
                 </label>
+                )}
               </div>
+
+              {sec.type === "media" && sec.style === "decks" && (
+                <p className="rounded-md border border-dashed border-border p-4 text-xs leading-relaxed text-fg-muted">
+                  Each image becomes a skateboard deck. Put the deck&apos;s name in its title field,
+                  and use tall portrait art (8.25 × 32 proportions, e.g. 1056 × 4096 px). All Deck
+                  Rack sections in this project join one long rack, in order; this section&apos;s
+                  heading is shown above its decks&apos; names.
+                </p>
+              )}
 
               <label className="block space-y-2">
                 <span className={labelCls}>Heading</span>
@@ -1167,7 +1179,11 @@ export default function ProjectForm({
                         </div>
                         <input
                           defaultValue={m.alt ?? ""}
-                          placeholder="Title — shown under this piece on the page"
+                          placeholder={
+                            sec.style === "decks"
+                              ? "Deck name — shown under the deck"
+                              : "Title — shown under this piece on the page"
+                          }
                           onBlur={(e) => saveAlt(m.id, e.target.value)}
                           className={inputCls}
                         />

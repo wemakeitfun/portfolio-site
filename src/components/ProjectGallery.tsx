@@ -1,13 +1,18 @@
-import { galleryColsClass, type MediaRow } from "@/lib/media";
+import { galleryColsClass, mediaUrl, type MediaRow } from "@/lib/media";
 import type { MediaSection } from "@/lib/portfolio";
 import ProjectMedia from "./ProjectMedia";
 import MediaSlideshow from "./MediaSlideshow";
+import DeckRack, { type DeckItem } from "./deck-rack/DeckRack";
 
 /**
  * Renders every one of a project's sections, in order — each as its own
  * independent grid or slideshow, skipping the cover image (it's already shown
  * as this project's card thumbnail, so it doesn't repeat here) and skipping any
  * section left empty once that's excluded.
+ *
+ * "3D Deck Rack" sections are different: all of them together form ONE long rack,
+ * rendered where the first one sits, and they keep the cover image (it's one of the
+ * decks, not just a card thumbnail).
  */
 export default function ProjectGallery({
   sections,
@@ -16,9 +21,18 @@ export default function ProjectGallery({
   sections: MediaSection[];
   coverId: string | null;
 }) {
+  const isDecks = (s: MediaSection) => s.type === "media" && s.style === "decks";
+  const decks: DeckItem[] = sections.filter(isDecks).flatMap((s) =>
+    s.media
+      .filter((m) => m.kind === "image")
+      .map((m) => ({ src: mediaUrl(m.path), name: m.alt ?? "", section: s.label })),
+  );
+  const firstDecksId = sections.find(isDecks)?.id;
+
   const visible = sections
-    .map((s) => ({ ...s, media: s.media.filter((m) => m.id !== coverId) }))
-    .filter((s) => (s.type === "text" ? s.text_blocks.length > 0 : s.media.length > 0));
+    .filter((s) => !isDecks(s) || s.id === firstDecksId)
+    .map((s) => (isDecks(s) ? s : { ...s, media: s.media.filter((m) => m.id !== coverId) }))
+    .filter((s) => (s.type === "text" ? s.text_blocks.length > 0 : isDecks(s) ? decks.length > 0 : s.media.length > 0));
 
   return (
     <>
@@ -55,6 +69,14 @@ export default function ProjectGallery({
                 ))}
               </div>
             </section>
+          );
+        }
+
+        if (isDecks(section)) {
+          return (
+            <div key={section.id} className={pad}>
+              <DeckRack items={decks} />
+            </div>
           );
         }
 
