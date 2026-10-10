@@ -102,7 +102,10 @@ export default function DeckRack({ items }: { items: DeckItem[] }) {
             setOpen(i);
             rack.current?.goTo(i, false); // keep the rack in step, so closing returns to this deck
           }}
-          onClose={() => setOpen(null)}
+          onClose={() => {
+            rack.current?.goTo(open, false); // land back on this deck, pinned
+            setOpen(null);
+          }}
         />
       )}
     </section>

@@ -23,6 +23,7 @@ export default function DeckDetail({
   onIndex: (i: number) => void;
   onClose: () => void;
 }) {
+  const dialog = useRef<HTMLDivElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const engine = useRef<Engine | null>(null);
   const shownIndex = useRef<number | null>(null);
@@ -59,14 +60,20 @@ export default function DeckDetail({
       shownIndex.current = index;
     });
     requestAnimationFrame(() => setVisible(true));
-    const root = document.documentElement;
-    const prevOverflow = root.style.overflow;
-    root.style.overflow = "hidden";
+
+    // Block page scrolling while open by swallowing scroll input on the overlay itself.
+    // (Setting overflow: hidden on <html> instead changes which element position: sticky
+    // tracks, and some browsers don't restore it cleanly — the rack then stops pinning.)
+    const el = dialog.current!;
+    const block = (e: Event) => e.preventDefault();
+    el.addEventListener("wheel", block, { passive: false });
+    el.addEventListener("touchmove", block, { passive: false });
     return () => {
       cancelled = true;
+      el.removeEventListener("wheel", block);
+      el.removeEventListener("touchmove", block);
       engine.current?.destroy();
       engine.current = null;
-      root.style.overflow = prevOverflow;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -82,7 +89,9 @@ export default function DeckDetail({
 
   // keyboard
   useEffect(() => {
+    const scrollKeys = [" ", "PageUp", "PageDown", "Home", "End", "ArrowUp", "ArrowDown"];
     const onKey = (e: KeyboardEvent) => {
+      if (scrollKeys.includes(e.key) && !(e.target instanceof HTMLButtonElement && e.key === " ")) e.preventDefault();
       if (e.key === "Escape") close();
       else if (e.key === "ArrowRight") step(1);
       else if (e.key === "ArrowLeft") step(-1);
@@ -103,6 +112,7 @@ export default function DeckDetail({
   // portal to <body>: the page-transition wrapper's transform would otherwise trap position: fixed
   return createPortal(
     <div
+      ref={dialog}
       role="dialog"
       aria-modal="true"
       aria-label={item.name}
