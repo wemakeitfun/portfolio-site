@@ -33,12 +33,15 @@ export const CONFIG = {
     rail: '#d9d6cf',
   },
 
+  // Balanced so the centre deck's face receives ≈1× light: the art shows at its true
+  // colours. Raise these and pale/pastel graphics wash out first.
   lighting: {
     exposure: 1.0,
-    envIntensity: 0.55,
-    keyIntensity: 2.4,
-    rimIntensity: 2.0,
-    ambientIntensity: 0.35,
+    envIntensity: 0.4,      // soft studio reflections
+    keyIntensity: 1.15,     // main light (front, upper left) — also casts the shadows
+    rimIntensity: 1.1,      // from behind; catches the edges and kicks
+    ambientIntensity: 0.2,
+    spotIntensity: 110,     // extra light on the centre deck in the rack
     shadowRadius: 18,
     shadowOpacity: 0.13,
   },

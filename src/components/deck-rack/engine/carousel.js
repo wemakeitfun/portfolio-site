@@ -50,7 +50,7 @@ export class Carousel {
     this.scene.add(wall);
 
     // extra light on the centre deck
-    const spot = new THREE.SpotLight(0xffffff, 900, 120, 0.28, 0.9, 1.6);
+    const spot = new THREE.SpotLight(0xffffff, config.lighting.spotIntensity, 120, 0.28, 0.9, 1.6);
     spot.position.set(0, 30, 40);
     spot.target.position.set(0, 0, 0);
     this.scene.add(spot, spot.target);

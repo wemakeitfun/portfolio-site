@@ -111,10 +111,10 @@ function downscale(image, maxHeight) {
 export function createGraphicMaterial(url, renderer, deckAspect, maxHeight) {
   const mat = new THREE.MeshPhysicalMaterial({
     color: 0xffffff,
-    roughness: 0.42,
+    roughness: 0.5,
     metalness: 0,
-    clearcoat: 0.35,
-    clearcoatRoughness: 0.35,
+    clearcoat: 0.12,        // a hint of printed sheen; more glares the art out
+    clearcoatRoughness: 0.4,
   });
   loader.load(url, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
