@@ -39,7 +39,7 @@ export default function Home() {
 
       <Marquee items={services} />
 
-      <section className="px-6 md:px-10 py-24 md:py-32">
+      <section className="px-page py-(--space-3)">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14 md:mb-20">
           <div>
             <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">
@@ -63,7 +63,7 @@ export default function Home() {
         <WorkGrid section="artificial" limit={4} />
       </section>
 
-      <section className="px-6 md:px-10 py-24 md:py-32 border-t border-border">
+      <section className="px-page py-(--space-3) border-t border-border">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14 md:mb-20">
           <div>
             <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">
@@ -87,7 +87,7 @@ export default function Home() {
         <WorkGrid section="art" limit={4} />
       </section>
 
-      <section className="px-6 md:px-10 py-24 md:py-32 border-t border-border">
+      <section className="px-page py-(--space-3) border-t border-border">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-14 md:mb-20">
           <div>
             <p className="font-mono text-xs uppercase tracking-widest text-accent mb-3">
@@ -111,7 +111,7 @@ export default function Home() {
         <WorkGrid section="ads" limit={4} />
       </section>
 
-      <section className="px-6 md:px-10 py-24 md:py-32 border-t border-border">
+      <section className="px-page py-(--space-3) border-t border-border">
         <div className="grid md:grid-cols-3 gap-10">
           <p className="font-mono text-xs uppercase tracking-widest text-fg-muted">
             About Adam

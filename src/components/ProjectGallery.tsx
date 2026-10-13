@@ -48,7 +48,7 @@ export default function ProjectGallery({
     <>
       {visible.map((section, i) => {
         const isLast = i === visible.length - 1;
-        const pad = isLast ? "pb-24 md:pb-32" : "pb-6 md:pb-8";
+        const pad = isLast ? "pb-(--space-3)" : "pb-(--space-1)";
 
         const label = section.label && (
           <p
@@ -61,11 +61,11 @@ export default function ProjectGallery({
 
         if (section.type === "text") {
           return (
-            <section key={section.id} className={`px-6 md:px-10 ${pad}`}>
+            <section key={section.id} className={`px-page ${pad}`}>
               {label}
               <div
                 style={{ maxWidth: `${section.width_percent}%` }}
-                className={`mx-auto grid grid-cols-1 gap-6 md:gap-8 ${galleryColsClass(section.columns)}`}
+                className={`mx-auto grid grid-cols-1 gap-(--space-1) ${galleryColsClass(section.columns)}`}
               >
                 {section.text_blocks.map((t) => (
                   <div key={t.id} className="rounded-2xl bg-bg-elevated p-6 md:p-8">
@@ -100,7 +100,7 @@ export default function ProjectGallery({
 
         if (section.style === "slideshow") {
           return (
-            <section key={section.id} className={`px-6 md:px-10 ${pad}`}>
+            <section key={section.id} className={`px-page ${pad}`}>
               {label}
               <MediaSlideshow
                 items={section.media}
@@ -112,11 +112,11 @@ export default function ProjectGallery({
         }
 
         return (
-          <section key={section.id} className={`px-6 md:px-10 ${pad}`}>
+          <section key={section.id} className={`px-page ${pad}`}>
             {label}
             <div
               style={{ maxWidth: `${section.width_percent}%` }}
-              className={`mx-auto grid grid-cols-1 gap-6 md:gap-8 ${galleryColsClass(section.columns)}`}
+              className={`mx-auto grid grid-cols-1 gap-(--space-1) ${galleryColsClass(section.columns)}`}
             >
               {section.media.map((m: MediaRow, j: number) => (
                 <figure key={m.id}>

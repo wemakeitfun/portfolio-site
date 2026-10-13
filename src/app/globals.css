@@ -30,6 +30,29 @@
   --accent-badge-fg: #0a0a0b;
 }
 
+/* Page rhythm: vertical spacing comes from three steps, and content is held to a
+   max width, centred, while section backgrounds and borders stay full-bleed.
+   --space-1 sits between items / stacked sections, --space-2 between a text block and
+   what follows it, --space-3 before a major break (next project, footer). */
+:root {
+  --space-1: 1rem;
+  --space-2: 2.5rem;
+  --space-3: 5rem;
+  --gutter: 1.5rem;
+  --content-max: 1600px;
+}
+@media (min-width: 768px) {
+  :root {
+    --space-1: 2rem;
+    --space-2: 4rem;
+    --space-3: 8rem;
+    --gutter: 2.5rem;
+  }
+}
+.px-page {
+  padding-inline: max(var(--gutter), calc((100% - var(--content-max)) / 2));
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-bg-elevated: var(--bg-elevated);

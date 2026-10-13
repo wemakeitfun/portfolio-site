@@ -29,7 +29,7 @@ export default async function AboutPage() {
 
   if (about.show_principles && about.principles.length > 0) {
     blocks.principles = (
-      <section className="px-6 md:px-10 py-24 md:py-32 grid md:grid-cols-3 gap-10">
+      <section className="px-page py-(--space-3) grid md:grid-cols-3 gap-10">
         <p className="font-mono text-xs uppercase tracking-widest text-fg-muted">
           How we work
         </p>
@@ -49,7 +49,7 @@ export default async function AboutPage() {
 
   if (about.show_timeline && about.timeline.length > 0) {
     blocks.timeline = (
-      <section className="px-6 md:px-10 py-24 md:py-32">
+      <section className="px-page py-(--space-3)">
         <p className="font-mono text-xs uppercase tracking-widest text-fg-muted mb-14">
           Timeline
         </p>
@@ -74,7 +74,7 @@ export default async function AboutPage() {
     <div>
       <TreatmentSmear images={ABOUT_TREATMENT_IMAGES} alt="About Me" />
 
-      <section className="px-6 md:px-10 pt-16 pb-16 md:pb-24">
+      <section className="px-page pt-(--space-2) pb-(--space-2)">
         <p className="font-mono text-xs uppercase tracking-widest text-accent mb-4">
           {about.eyebrow}
         </p>

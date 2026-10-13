@@ -7,7 +7,7 @@ export const revalidate = 60;
 export default function AdsPage() {
   return (
     <div className="pt-32">
-      <section className="px-6 md:px-10 pb-16 md:pb-24">
+      <section className="px-page pb-(--space-2)">
         <p className="font-mono text-xs uppercase tracking-widest text-accent mb-4">
           Ads
         </p>
@@ -22,7 +22,7 @@ export default function AdsPage() {
         </p>
       </section>
 
-      <section className="px-6 md:px-10 pb-24 md:pb-32">
+      <section className="px-page pb-(--space-3)">
         <WorkGrid section="ads" />
       </section>
     </div>

@@ -14,7 +14,7 @@ export default function ArtPage() {
       <NameSmear text="Kahncept" ink="#ff004e" paper="#ffffff" />
 
       <div className="pt-32">
-        <section className="px-6 md:px-10 pb-16 md:pb-24">
+        <section className="px-page pb-(--space-2)">
           <p className="font-mono text-xs uppercase tracking-widest text-accent mb-4">
             Art
           </p>
@@ -29,7 +29,7 @@ export default function ArtPage() {
           </p>
         </section>
 
-        <section className="px-6 md:px-10 pb-24 md:pb-32">
+        <section className="px-page pb-(--space-3)">
           <WorkGrid section="art" />
         </section>
       </div>
