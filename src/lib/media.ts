@@ -2,8 +2,12 @@ export const MEDIA_BUCKET = "portfolio-media";
 
 export type Section = "work" | "ads" | "art" | "artificial" | "generative";
 export type HoverEffect = "none" | "smear";
-/** "decks" renders a project section as the 3D skateboard deck rack (projects only, not About). */
-export type GalleryStyle = "grid" | "slideshow" | "decks";
+/**
+ * "decks" renders a project section as the 3D skateboard deck rack; "mojo" renders the
+ * 3D Mojo tin carousel (its packs are built in, so the section needs no media).
+ * Both are for projects only, not About.
+ */
+export type GalleryStyle = "grid" | "slideshow" | "decks" | "mojo";
 export type SectionWidth = 25 | 50 | 75 | 100;
 export type GalleryColumns = 1 | 2 | 3 | 4 | 5 | 6;
 /** "media" is the original image/video gallery; "text" is a row of label+body cards. */

@@ -944,6 +944,7 @@ export default function ProjectForm({
                       <option value="grid">Grid</option>
                       <option value="slideshow">Slideshow (click to advance)</option>
                       <option value="decks">3D Deck Rack (skateboards)</option>
+                      <option value="mojo">3D Mojo Carousel (tins)</option>
                     </select>
                   </label>
                 )}
@@ -966,7 +967,7 @@ export default function ProjectForm({
                     </select>
                   </label>
                 )}
-                {!(sec.type === "media" && sec.style === "decks") && (
+                {!(sec.type === "media" && (sec.style === "decks" || sec.style === "mojo")) && (
                 <label className="space-y-2">
                   <span className={labelCls}>Size</span>
                   <select
@@ -984,6 +985,14 @@ export default function ProjectForm({
                 </label>
                 )}
               </div>
+
+              {sec.type === "media" && sec.style === "mojo" && (
+                <p className="rounded-md border border-dashed border-border p-4 text-xs leading-relaxed text-fg-muted">
+                  Shows the 3D Mojo tin carousel full width here. The six flavours and their pack
+                  art are built in, so this section doesn&apos;t need any media — anything uploaded
+                  to it is ignored. Only the first carousel section in a project is shown.
+                </p>
+              )}
 
               {sec.type === "media" && sec.style === "decks" && (
                 <p className="rounded-md border border-dashed border-border p-4 text-xs leading-relaxed text-fg-muted">

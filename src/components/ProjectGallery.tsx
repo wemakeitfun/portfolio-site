@@ -3,6 +3,7 @@ import type { MediaSection } from "@/lib/portfolio";
 import ProjectMedia from "./ProjectMedia";
 import MediaSlideshow from "./MediaSlideshow";
 import DeckRack, { type DeckItem } from "./deck-rack/DeckRack";
+import MojoCarousel from "./mojo-carousel/MojoCarousel";
 
 /**
  * Renders every one of a project's sections, in order — each as its own
@@ -13,6 +14,9 @@ import DeckRack, { type DeckItem } from "./deck-rack/DeckRack";
  * "3D Deck Rack" sections are different: all of them together form ONE long rack,
  * rendered where the first one sits, and they keep the cover image (it's one of the
  * decks, not just a card thumbnail).
+ *
+ * A "3D Mojo Carousel" section renders the Mojo tin carousel. Its packs are built in,
+ * so it shows even with no media, and only the first such section is used.
  */
 export default function ProjectGallery({
   sections,
@@ -28,11 +32,17 @@ export default function ProjectGallery({
       .map((m) => ({ src: mediaUrl(m.path), name: m.alt ?? "", section: s.label })),
   );
   const firstDecksId = sections.find(isDecks)?.id;
+  const isMojo = (s: MediaSection) => s.type === "media" && s.style === "mojo";
+  const firstMojoId = sections.find(isMojo)?.id;
 
   const visible = sections
-    .filter((s) => !isDecks(s) || s.id === firstDecksId)
+    .filter((s) => (!isDecks(s) || s.id === firstDecksId) && (!isMojo(s) || s.id === firstMojoId))
     .map((s) => (isDecks(s) ? s : { ...s, media: s.media.filter((m) => m.id !== coverId) }))
-    .filter((s) => (s.type === "text" ? s.text_blocks.length > 0 : isDecks(s) ? decks.length > 0 : s.media.length > 0));
+    .filter((s) =>
+      s.type === "text"
+        ? s.text_blocks.length > 0
+        : isMojo(s) || (isDecks(s) ? decks.length > 0 : s.media.length > 0),
+    );
 
   return (
     <>
@@ -76,6 +86,14 @@ export default function ProjectGallery({
           return (
             <div key={section.id} className={pad}>
               <DeckRack items={decks} />
+            </div>
+          );
+        }
+
+        if (isMojo(section)) {
+          return (
+            <div key={section.id} className={pad}>
+              <MojoCarousel />
             </div>
           );
         }
