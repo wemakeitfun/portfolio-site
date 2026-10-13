@@ -2,6 +2,7 @@ import { galleryColsClass, mediaUrl, type MediaRow } from "@/lib/media";
 import type { MediaSection } from "@/lib/portfolio";
 import ProjectMedia from "./ProjectMedia";
 import MediaSlideshow from "./MediaSlideshow";
+import Reveal from "./Reveal";
 import DeckRack, { type DeckItem } from "./deck-rack/DeckRack";
 import MojoCarousel from "./mojo-carousel/MojoCarousel";
 
@@ -61,21 +62,25 @@ export default function ProjectGallery({
 
         if (section.type === "text") {
           return (
-            <section key={section.id} className={`px-page ${pad}`}>
+            <section key={section.id} className={`px-page-capped ${pad}`}>
               {label}
               <div
                 style={{ maxWidth: `${section.width_percent}%` }}
                 className={`mx-auto grid grid-cols-1 gap-(--space-1) ${galleryColsClass(section.columns)}`}
               >
-                {section.text_blocks.map((t) => (
-                  <div key={t.id} className="rounded-2xl bg-bg-elevated p-6 md:p-8">
+                {section.text_blocks.map((t, k) => (
+                  <Reveal
+                    key={t.id}
+                    delay={(k % section.columns) * 80}
+                    className="rounded-2xl bg-bg-elevated p-6 md:p-8"
+                  >
                     {t.label && (
                       <p className="mb-3 font-mono text-xs uppercase tracking-widest text-fg-muted">
                         {t.label}
                       </p>
                     )}
                     <p className="whitespace-pre-line text-lg leading-relaxed">{t.body}</p>
-                  </div>
+                  </Reveal>
                 ))}
               </div>
             </section>
@@ -100,25 +105,31 @@ export default function ProjectGallery({
 
         if (section.style === "slideshow") {
           return (
-            <section key={section.id} className={`px-page ${pad}`}>
+            <section key={section.id} className={`px-page-capped ${pad}`}>
               {label}
-              <MediaSlideshow
-                items={section.media}
-                sizes="(min-width: 768px) 90vw, 100vw"
-                widthPercent={section.width_percent}
-              />
+              {(() => {
+                const slideshow = (
+                  <MediaSlideshow
+                    items={section.media}
+                    sizes="(min-width: 768px) 90vw, 100vw"
+                    widthPercent={section.width_percent}
+                  />
+                );
+                return i === 0 ? slideshow : <Reveal>{slideshow}</Reveal>;
+              })()}
             </section>
           );
         }
 
         return (
-          <section key={section.id} className={`px-page ${pad}`}>
+          <section key={section.id} className={`px-page-capped ${pad}`}>
             {label}
             <div
               style={{ maxWidth: `${section.width_percent}%` }}
               className={`mx-auto grid grid-cols-1 gap-(--space-1) ${galleryColsClass(section.columns)}`}
             >
-              {section.media.map((m: MediaRow, j: number) => (
+              {section.media.map((m: MediaRow, j: number) => {
+                const figure = (
                 <figure key={m.id}>
                   <div
                     className="relative w-full rounded-2xl overflow-hidden bg-bg-elevated border border-border"
@@ -139,7 +150,16 @@ export default function ProjectGallery({
                     </figcaption>
                   )}
                 </figure>
-              ))}
+                );
+                // The page's first image is its largest paint; don't hold it back.
+                return i === 0 && j === 0 ? (
+                  figure
+                ) : (
+                  <Reveal key={m.id} delay={(j % section.columns) * 80}>
+                    {figure}
+                  </Reveal>
+                );
+              })}
             </div>
           </section>
         );

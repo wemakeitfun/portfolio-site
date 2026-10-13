@@ -24,7 +24,7 @@ export default async function ProjectPage(props: PageProps<"/work/[slug]">) {
   return (
     <div className="pt-32" style={projectBackgroundStyle(project.background_color)}>
       <ProjectThemeOverride isLight={project.background_color ? isLightColor(project.background_color) : null} />
-      <section className="px-page pb-(--space-2)">
+      <section className="px-page-capped pb-(--space-2)">
         <Link
           href="/work"
           className="font-mono text-xs uppercase tracking-widest text-fg-muted hover:text-fg transition-colors"
@@ -63,7 +63,7 @@ export default async function ProjectPage(props: PageProps<"/work/[slug]">) {
       </section>
 
       {(project.summary || project.description) && (
-        <section className="px-page pb-(--space-2) pt-0 grid md:grid-cols-2 gap-x-12 gap-y-10">
+        <section className="px-page-capped pb-(--space-2) pt-0 grid md:grid-cols-2 gap-x-12 gap-y-10">
           {project.summary && (
             <div>
               <p className="font-mono text-xs uppercase tracking-widest text-fg-muted mb-4">
@@ -88,7 +88,7 @@ export default async function ProjectPage(props: PageProps<"/work/[slug]">) {
       <ProjectGallery sections={project.sections} coverId={project.cover?.id ?? null} />
 
       {next && (
-        <section className="border-t border-border px-page py-(--space-2)">
+        <section className="border-t border-border px-page-capped py-(--space-2)">
           <Link href={`/work/${next.slug}`} className="group block">
             <p className="font-mono text-xs uppercase tracking-widest text-fg-muted mb-3">
               Next project

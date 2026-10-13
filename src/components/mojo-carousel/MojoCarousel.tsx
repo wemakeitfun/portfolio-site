@@ -35,7 +35,7 @@ export default function MojoCarousel() {
     <section ref={pin} className="relative" aria-label="Mojo flavours, shown as 3D packs">
       {/* sticky position and height are set by the engine: a centred band, not full screen.
           The studio sits in the same rounded container as the gallery's images and videos. */}
-      <div ref={sticky} className="sticky top-[20vh] h-[60vh] px-page">
+      <div ref={sticky} className="sticky top-[20vh] h-[60vh] px-page-capped">
         <div className="relative h-full overflow-hidden rounded-2xl border border-border bg-[#ebe8e3]">
           {/* the studio fades in once the tins are ready */}
           <div

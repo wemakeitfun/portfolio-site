@@ -71,6 +71,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="bg-bg text-fg font-sans min-h-screen flex flex-col overflow-x-hidden">
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <noscript>
+          <style>{".reveal{opacity:1;transform:none}"}</style>
+        </noscript>
         <RouteTheme />
         <CustomCursor />
         <Nav />

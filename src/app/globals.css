@@ -50,7 +50,31 @@
   }
 }
 .px-page {
+  padding-inline: var(--gutter);
+}
+/* Project pages only: the same gutter, but content stops at --content-max and centres. */
+.px-page-capped {
   padding-inline: max(var(--gutter), calc((100% - var(--content-max)) / 2));
+}
+
+/* Scroll fade for gallery items (see components/Reveal.tsx). */
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 500ms ease-out var(--reveal-delay, 0ms),
+    transform 500ms ease-out var(--reveal-delay, 0ms);
+}
+.reveal[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 @theme inline {
