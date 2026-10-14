@@ -226,16 +226,6 @@
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   .embedded .wrap { padding-block: 16px 32px; }
   .hud .day { color: var(--dim); font-size: 11px; letter-spacing: 0.1em; }
-  .replay-tag {
-    position: absolute;
-    top: 8px;
-    left: 10px;
-    font-family: var(--font-display);
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    color: var(--dim);
-    pointer-events: none;
-  }
   @media (prefers-reduced-motion: reduce) {
     .hud .score.flash, .banner .big { animation: none; }
   }
@@ -259,7 +249,6 @@
     </div>
     <div class="screen" id="screen">
       <canvas id="c" width="400" height="150" tabindex="0" aria-label="PXL RUNNER game screen. Press Space or W to jump, hold S to squish."></canvas>
-      <div class="replay-tag" id="replayTag" hidden></div>
       <div class="banner" id="banner" hidden>
         <p class="big" id="bannerBig">Hard mode</p>
         <p class="small" id="bannerSmall">Faster, tighter, meaner</p>
@@ -294,7 +283,7 @@
     <div><dt>Hard mode</dt><dd>Starts at 1,000 points. The game speeds up, obstacles bunch together and new ones appear.</dd></div>
     <div><dt>Extreme</dt><dd>Starts at 2,500 points. Rolling and bouncing boulders, chains of gaps, and sky paths to hop up and down across.</dd></div>
     <div><dt>Insane</dt><dd>Starts at 4,000 points. Staircases to climb with boulders rolling down them, cracked platforms that crumble under you, and obstacles back to back.</dd></div>
-    <div><dt>Daily course</dt><dd>Everyone gets the same course each day. Your earlier attempts today run beside you as ghosts, red marks show where they died, and a replay of every attempt plays after each run.</dd></div>
+    <div><dt>Daily course</dt><dd>Everyone gets the same course each day. Your earlier attempts today follow a step behind you as ghosts, and red marks show where they died.</dd></div>
     <div><dt>Coins</dt><dd>Each one you grab adds 10 bonus points to your score.</dd></div>
   </dl>
 
@@ -396,7 +385,7 @@
   let speed, dist, score, y, vy, onGround, jumps, dbl, airT, runT, landT, duckT, coyote, overAt,
       gapLeft, night, nightFade, lastMilestone, jumpBuffer, shakeT, shakeAmp, dustT, runCoins;
   let obstacles = [], clouds = [], pebbles = [], parts = [], stars = [];
-  let runLog = [], runSamples = [], nextSample = 0, livePopped = new Set(), replay = null;
+  let runSamples = [], nextSample = 0, livePopped = new Set();
   let duckHeld = false;
 
   function reset() {
@@ -409,7 +398,7 @@
     modeEl.textContent = 'Hard';
     modeEl.hidden = true; bannerEl.hidden = true;
     obstacles = []; parts = [];
-    runLog = []; runSamples = []; nextSample = 0; livePopped = new Set();
+    runSamples = []; nextSample = 0; livePopped = new Set();
   }
   for (let i = 0; i < 4; i++) clouds.push({ x: Math.random() * W, y: 18 + Math.random() * 50 });
   for (let i = 0; i < 46; i++) pebbles.push({ x: Math.random() * W, y: GROUND + 3 + Math.floor(Math.random() * 14), w: Math.random() < 0.25 ? 2 : 1 });
@@ -537,7 +526,6 @@
   function start() {
     if (dayKey() !== courseDay) { courseDay = dayKey(); ghosts = loadGhosts(); showDay(); }
     rnd = seeded('pxl-runner:' + courseDay);
-    replay = null; replayTag.hidden = true;
     postForm.hidden = true; pendingRun = null;
     setTempo(1);
     reset(); state = 'play'; overlay.hidden = true;
@@ -604,7 +592,6 @@
   }
   let courseDay = dayKey(), rnd = seeded('pxl-runner:' + courseDay);
   const dayEl = document.getElementById('day');
-  const replayTag = document.getElementById('replayTag');
   const showDay = () => {
     dayEl.textContent = 'Course ' + new Date(courseDay + 'T00:00:00Z').toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
   };
@@ -634,7 +621,6 @@
     let span = 0, top = 0, ownCoins = false;
     const add = o => {
       obstacles.push(Object.assign({ x: x0 + o.dx }, o));
-      if (o.kind !== 'coin') runLog.push(Object.assign({}, o, { wx: x0 + o.dx + dist, d0: dist }));
       span = Math.max(span, o.dx + o.w);
       if (o.kind !== 'pit' && o.kind !== 'coin') top = Math.max(top, o.lift + o.h);
     };
@@ -961,9 +947,9 @@
     // ghosts: record this attempt, and pop earlier ones where they died
     while (nextSample <= dist) { runSamples.push(ghostCode()); nextSample += GHOST_STEP; }
     for (const r of ghosts.runs) {
-      if (!livePopped.has(r) && dist >= r.d) {
+      if (!livePopped.has(r) && dist - GHOST_LAG >= r.d) {
         livePopped.add(r);
-        puff(PX, GROUND - codeY(r.s[r.s.length - 1]) - 10, 5, 40, 40, 0, '#8a8d90');
+        puff(PX - GHOST_LAG, GROUND - codeY(r.s[r.s.length - 1]) - 10, 5, 40, 40, 0, '#8a8d90');
       }
     }
 
@@ -1001,7 +987,6 @@
     msgSmall.textContent = DEATH[cause] + '.' + got + ' Press space or tap to run again.';
     overlay.hidden = false;
     recordAttempt();
-    startReplay();
     if (offerPost(Math.floor(score), Math.round(runMs))) msgSmall.textContent += ' Post your new best below the game.';
     loadBoard();
   }
@@ -1011,9 +996,12 @@
   // packed into one number: (y + 64) * 128 + pose * 10 + frame.
   const POSES = ['run', 'idle', 'duck', 'duck2', 'spin', 'crouch', 'up', 'apex', 'fall', 'land', 'dead'];
   const GHOST_STEP = 6, GHOST_KEY = 'pxlrunner-ghosts', MAX_GHOSTS = 20;
+  // Ghosts run this many pixels behind you, showing what each attempt did at that exact
+  // spot, so their jumps still line up with the obstacles you've just passed.
+  const GHOST_LAG = 30;
   const loadGhosts = () => {
     const g = store.get(GHOST_KEY, null);
-    return g && g.day === courseDay && Array.isArray(g.runs) ? g : { day: courseDay, runs: [], course: [], courseLen: 0 };
+    return g && g.day === courseDay && Array.isArray(g.runs) ? g : { day: courseDay, runs: [] };
   };
   let ghosts = loadGhosts();
   const ghostCode = () => {
@@ -1027,7 +1015,6 @@
   function recordAttempt() {
     runSamples.push(ghostCode());
     ghosts.runs.push({ d: dist, s: runSamples });
-    if (dist > ghosts.courseLen) { ghosts.course = runLog; ghosts.courseLen = dist; }
     if (ghosts.runs.length > MAX_GHOSTS) {   // keep the best attempt and the most recent ones
       const best = bestRun();
       const keep = ghosts.runs.slice(-(MAX_GHOSTS - 1));
@@ -1045,59 +1032,24 @@
     if (!runs.length) return;
     const best = bestRun();
     ctx.fillStyle = '#ff5a4f';
+    ctx.globalAlpha = 0.7;
     for (const r of runs) {   // a small red x in the dirt where each attempt died
       const sx = Math.round(PX + r.d - D);
       if (sx < -4 || sx > W + 4) continue;
-      ctx.globalAlpha = replay && r === replay.current ? 1 : 0.7;
       for (let i = -2; i <= 2; i++) { ctx.fillRect(sx + i, GROUND + 5 + i, 1, 1); ctx.fillRect(sx + i, GROUND + 5 - i, 1, 1); }
     }
-    for (const r of runs) {
-      const c = ghostAt(r, D);
-      if (c == null) continue;
-      ctx.globalAlpha = replay ? (r === replay.current ? 0.95 : r === best ? 0.55 : 0.3) : (r === best ? 0.3 : 0.15);
-      drawGhostCode(c);
+    if (D >= GHOST_LAG) {
+      ctx.save();
+      ctx.translate(-GHOST_LAG, 0);
+      for (const r of runs) {
+        const c = ghostAt(r, D - GHOST_LAG);
+        if (c == null) continue;
+        ctx.globalAlpha = r === best ? 0.35 : 0.18;
+        drawGhostCode(c);
+      }
+      ctx.restore();
     }
     ctx.globalAlpha = 1;
-  }
-
-  // ---------- replay of every attempt, after you die ----------
-  function courseAt(D) {
-    const out = [];
-    for (const o of ghosts.course) {
-      let x = o.wx - D;
-      if (o.kind === 'fly') x -= 0.08 * (D - o.d0);
-      else if (o.kind === 'boulder' && !o.wait) x -= ((o.roll || 1) - 1) * (D - o.d0);
-      if (x + o.w < -20 || x > W + 20) continue;
-      out.push(Object.assign({}, o, { x, crumbleT: null, falling: false }));
-    }
-    return out;
-  }
-  function startReplay() {
-    const runs = ghosts.runs;
-    if (!runs.length || !ghosts.course) return;
-    const end = Math.max(...runs.map(r => r.d));
-    replay = { D: 0, end, speed: Math.max(520, end / 4.5), current: runs[runs.length - 1], popped: new Set(), hold: 0, done: false };
-    parts = [];
-    overlay.hidden = true;
-    replayTag.textContent = `Replay: ${runs.length} attempt${runs.length === 1 ? '' : 's'} today`;
-    replayTag.hidden = false;
-  }
-  function updateReplay(dt) {
-    const R = replay;
-    if (R.D < R.end + 40) {
-      const step = R.speed * dt;
-      R.D = Math.min(R.end + 40, R.D + step);
-      for (const p of pebbles) { p.x -= step; while (p.x < -2) p.x += W + 4; }
-    } else if ((R.hold += dt) > 0.7) {
-      R.done = true; replayTag.hidden = true; overlay.hidden = false;
-    }
-    obstacles = courseAt(R.D);
-    for (const r of ghosts.runs) {
-      if (!R.popped.has(r) && R.D >= r.d) {
-        R.popped.add(r);
-        puff(PX, GROUND - codeY(r.s[r.s.length - 1]) - 10, 8, 60, 50, 0, r === R.current ? '#ff5a4f' : '#8a8d90');
-      }
-    }
   }
 
   // ---------- draw ----------
@@ -1199,11 +1151,9 @@
     }
     ctx.globalAlpha = 1;
 
-    if (state === 'play' || replay) drawGhosts(replay ? replay.D : dist);
-    if (!replay) {
-      const [pose, k] = poseNow();
-      drawOrig(pose, k, GROUND - y);
-    }
+    if (state === 'play') drawGhosts(dist);
+    const [pose, k] = poseNow();
+    drawOrig(pose, k, GROUND - y);
     ctx.restore();
   }
 
@@ -1306,7 +1256,6 @@
     last = t;
     clock += dt;
     if (state === 'play') update(dt);
-    else if (state === 'over' && replay && !replay.done) updateReplay(dt);
     else if (state === 'ready') {
       for (const c of clouds) { c.x -= 6 * dt; if (c.x < -20) c.x = W + 20; }
     }
