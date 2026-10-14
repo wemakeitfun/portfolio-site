@@ -38,6 +38,7 @@ export default function Nav() {
       <div className="flex items-center justify-between px-6 md:px-10 py-5 md:py-6">
         <Link
           href="/"
+          aria-label="AK, Adam Kahn — home"
           className="font-display text-2xl tracking-wide leading-none"
           onClick={() => setOpen(false)}
         >
@@ -51,7 +52,8 @@ export default function Nav() {
               <Link
                 key={l.href}
                 href={l.href}
-                className="group relative hover:text-accent transition-colors"
+                aria-current={active ? "page" : undefined}
+                className="group relative -mx-2 -my-3 px-2 py-3 hover:text-accent transition-colors"
               >
                 <SwapText>{l.label}</SwapText>
                 {active && (
@@ -78,6 +80,8 @@ export default function Nav() {
 
           <button
             aria-label="Toggle menu"
+            aria-expanded={open}
+            aria-controls="mobile-menu"
             onClick={() => setOpen((v) => !v)}
             className="md:hidden relative z-50 h-9 w-9 flex flex-col items-center justify-center gap-1.5"
           >
@@ -94,6 +98,7 @@ export default function Nav() {
       <AnimatePresence>
         {open && (
           <motion.div
+            id="mobile-menu"
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
@@ -106,6 +111,7 @@ export default function Nav() {
                   key={l.href}
                   href={l.href}
                   onClick={() => setOpen(false)}
+                  aria-current={pathname === l.href ? "page" : undefined}
                   className="hover:text-accent transition-colors"
                 >
                   {l.label}

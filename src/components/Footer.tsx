@@ -42,7 +42,7 @@ export default function Footer() {
           <ul className="flex flex-col gap-2">
             {nav.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="hover:text-accent transition-colors">
+                <Link href={l.href} className="-mx-2 -my-1 inline-block px-2 py-1 hover:text-accent transition-colors">
                   {l.label}
                 </Link>
               </li>
@@ -61,7 +61,7 @@ export default function Footer() {
                   href={s.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="hover:text-accent transition-colors"
+                  className="-mx-2 -my-1 inline-block px-2 py-1 hover:text-accent transition-colors"
                 >
                   {s.label}
                 </a>

@@ -71,11 +71,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <noscript>
           <style>{".reveal{opacity:1;transform:none}"}</style>
         </noscript>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[10000] focus:rounded-full focus:bg-[#d7ff3f] focus:px-4 focus:py-2 focus:font-mono focus:text-xs focus:uppercase focus:tracking-widest focus:text-[#0a0a0b]"
+        >
+          Skip to content
+        </a>
         <RouteTheme />
         <CustomCursor />
         <KonamiGlitch />
         <Nav />
-        <main className="flex-1">{children}</main>
+        <main id="main" tabIndex={-1} className="flex-1 focus:outline-none">
+          {children}
+        </main>
         <Footer />
       </body>
     </html>

@@ -79,7 +79,7 @@ export default function SquishEasterEgg() {
         onClick={() => setOpen(true)}
         aria-label="Play PXL RUNNER"
         title="Psst. Click me."
-        className="group inline-flex items-end text-fg-muted hover:text-accent transition-colors"
+        className="group -m-2 inline-flex items-end p-2 text-fg-muted hover:text-accent transition-colors"
       >
         <svg
           viewBox="0 0 13 25"

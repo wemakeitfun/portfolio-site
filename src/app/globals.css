@@ -18,13 +18,13 @@
 }
 
 /* Light theme for the Art section — set on <html> (see components/RouteTheme.tsx).
-   The lime accent is too pale to read on white, so it's swapped for a darker olive here. */
+   The lime accent is too pale to read on white, so it's swapped for a darker olive here (5.8:1 on white). */
 :root.theme-light {
   --bg: #ffffff;
   --bg-elevated: #f2f1ec;
   --fg: #0a0a0b;
   --fg-muted: #5f5e58;
-  --accent: #6b8500;
+  --accent: #566e00;
   --border: rgba(10, 10, 11, 0.12);
   --accent-badge: #d7ff3f;
   --accent-badge-fg: #0a0a0b;
@@ -62,10 +62,10 @@
 html.konami,
 html.konami.theme-light {
   --bg: #ff004e;
-  --bg-elevated: #e0003f;
+  --bg-elevated: #ff3d78;
   --fg: #0a0a0b;
-  --fg-muted: rgba(10, 10, 11, 0.65);
-  --accent: #d7ff3f;
+  --fg-muted: #2a000b;
+  --accent: #0a0a0b;
   --border: rgba(10, 10, 11, 0.3);
   color-scheme: dark;
 }

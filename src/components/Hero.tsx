@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import RevealHeading from "./RevealHeading";
+import HeroReel from "./HeroReel";
 
 export default function Hero() {
   return (
@@ -30,21 +31,12 @@ export default function Hero() {
         </RevealHeading>
 
         <motion.div
-          aria-hidden
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-border bg-bg-elevated md:aspect-auto md:h-[58svh]"
         >
-          <video
-            src="/hero/reel.mp4"
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          <HeroReel />
         </motion.div>
       </div>
 

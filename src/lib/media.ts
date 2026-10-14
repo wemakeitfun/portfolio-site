@@ -165,7 +165,7 @@ export function projectBackgroundStyle(backgroundColor: string | null): Record<s
     "--bg-elevated": isLight ? "#f2f1ec" : "#111113",
     "--fg": fg,
     "--fg-muted": isLight ? "#5f5e58" : "#8c8b87",
-    "--accent": isLight ? "#6b8500" : "#d7ff3f",
+    "--accent": isLight ? "#566e00" : "#d7ff3f",
     "--border": isLight ? "rgba(10, 10, 11, 0.12)" : "rgba(243, 242, 236, 0.12)",
   };
 }
