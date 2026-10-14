@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getNextProject, getProject, getSlugs } from "@/lib/portfolio";
 import { isLightColor, projectBackgroundStyle } from "@/lib/media";
+import { projectMetadata } from "@/lib/seo";
 import ProjectThemeOverride from "@/components/ProjectThemeOverride";
 import RevealHeading from "@/components/RevealHeading";
 import ProjectGallery from "@/components/ProjectGallery";
@@ -9,6 +10,11 @@ import ArrowUpRightIcon from "@/components/ArrowUpRightIcon";
 
 // New uploads show up within a minute of publishing.
 export const revalidate = 60;
+
+export async function generateMetadata(props: PageProps<"/art/[slug]">) {
+  const { slug } = await props.params;
+  return projectMetadata("art", slug);
+}
 
 export async function generateStaticParams() {
   return (await getSlugs("art")).map((slug) => ({ slug }));

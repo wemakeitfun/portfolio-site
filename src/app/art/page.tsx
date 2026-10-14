@@ -1,9 +1,17 @@
+import { pageMetadata } from "@/lib/seo";
 import NameSmear from "@/components/NameSmear";
 import RevealHeading from "@/components/RevealHeading";
 import WorkGrid from "@/components/WorkGrid";
 
 // New uploads show up within a minute of publishing.
 export const revalidate = 60;
+
+export const metadata = pageMetadata({
+  title: "Art",
+  description:
+    "Personal art by Adam Kahn / Kahncept — independent pieces, made for their own sake.",
+  path: "/art",
+});
 
 export default function ArtPage() {
   return (

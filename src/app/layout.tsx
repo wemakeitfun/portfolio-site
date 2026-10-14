@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
 import RouteTheme from "@/components/RouteTheme";
+import { HOME_DESCRIPTION, HOME_TITLE, SITE_NAME, SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 // Runs before hydration so a direct load of an /art page paints light-themed
@@ -34,27 +35,22 @@ const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://kahncept.com";
-const SITE_TITLE = "Adam Kahn / Kahncept";
-const SITE_DESCRIPTION =
-  "Adam Kahn / Kahncept — 20 years making ads, a lifetime making art, now rebuilding how both get made.";
-
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: SITE_TITLE,
-  description: SITE_DESCRIPTION,
+  title: { default: HOME_TITLE, template: `%s | ${SITE_NAME}` },
+  description: HOME_DESCRIPTION,
   openGraph: {
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
     url: SITE_URL,
-    siteName: SITE_TITLE,
-    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: SITE_TITLE }],
+    siteName: SITE_NAME,
+    images: [{ url: "/og-image.jpg", width: 1200, height: 630, alt: SITE_NAME }],
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
+    title: HOME_TITLE,
+    description: HOME_DESCRIPTION,
     images: ["/og-image.jpg"],
   },
 };

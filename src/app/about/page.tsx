@@ -5,9 +5,21 @@ import Timeline from "@/components/Timeline";
 import TreatmentSmear from "@/components/TreatmentSmear";
 import RevealHeading from "@/components/RevealHeading";
 import { getAboutPage, type ContentBlockKey } from "@/lib/about";
+import { pageMetadata, trimDescription } from "@/lib/seo";
 
 // Edits from the admin show up within a minute.
 export const revalidate = 60;
+
+export async function generateMetadata() {
+  const about = await getAboutPage();
+  return pageMetadata({
+    title: "About",
+    description:
+      trimDescription(about.intro) ??
+      "About Adam Kahn / Kahncept — 20 years making ads, a lifetime making art.",
+    path: "/about",
+  });
+}
 
 // A random two of these play base/reveal each time the page loads.
 const ABOUT_TREATMENT_IMAGES = [

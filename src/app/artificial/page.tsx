@@ -1,8 +1,16 @@
+import { pageMetadata } from "@/lib/seo";
 import RevealHeading from "@/components/RevealHeading";
 import WorkGrid from "@/components/WorkGrid";
 
 // New uploads show up within a minute of publishing.
 export const revalidate = 60;
+
+export const metadata = pageMetadata({
+  title: "AI-Assisted Work",
+  description:
+    "AI-assisted work by Adam Kahn — pieces made with AI tools in the loop.",
+  path: "/artificial",
+});
 
 export default function ArtificialPage() {
   return (

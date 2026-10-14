@@ -4,6 +4,8 @@ import WorkGrid from "@/components/WorkGrid";
 import Marquee from "@/components/Marquee";
 import Link from "next/link";
 
+export const metadata = { alternates: { canonical: "/" } };
+
 // New uploads show up within a minute of publishing.
 export const revalidate = 60;
 

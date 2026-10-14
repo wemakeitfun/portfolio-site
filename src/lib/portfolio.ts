@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
 import type { MediaRow, ProjectRow, Section, SectionRow, TextBlockRow } from "./media";
 
@@ -51,7 +52,7 @@ type DetailRow = ProjectRow & {
   project_sections: (SectionRow & { project_media: MediaRow[]; project_text_blocks: TextBlockRow[] })[];
 };
 
-export async function getProject(slug: string): Promise<Project | null> {
+export const getProject = cache(async (slug: string): Promise<Project | null> => {
   const { data, error } = await supabase
     .from("projects")
     .select("*, project_sections(*, project_media(*), project_text_blocks(*))")
@@ -74,7 +75,7 @@ export async function getProject(slug: string): Promise<Project | null> {
   const allMedia = sections.flatMap((s) => s.media);
 
   return { ...project, sections, cover: allMedia.find((m) => m.is_cover) ?? allMedia[0] ?? null };
-}
+});
 
 /** The project after this one in the same section (wraps around), or null if it's the only one. */
 export async function getNextProject(project: Project): Promise<ProjectSummary | null> {

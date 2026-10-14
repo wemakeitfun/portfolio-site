@@ -1,8 +1,16 @@
+import { pageMetadata } from "@/lib/seo";
 import RevealHeading from "@/components/RevealHeading";
 import WorkGrid from "@/components/WorkGrid";
 
 // New uploads show up within a minute of publishing.
 export const revalidate = 60;
+
+export const metadata = pageMetadata({
+  title: "Generative Experiments",
+  description:
+    "Generative experiments by Adam Kahn — systems and prompts that make the work themselves.",
+  path: "/generative",
+});
 
 export default function GenerativePage() {
   return (
