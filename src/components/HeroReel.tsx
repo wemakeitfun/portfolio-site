@@ -27,7 +27,8 @@ export default function HeroReel() {
     <>
       <video
         ref={ref}
-        src="/hero/reel.mp4"
+        src="/hero/reel_1.mp4"
+        poster="/hero/reel-poster.webp"
         autoPlay
         muted
         loop
