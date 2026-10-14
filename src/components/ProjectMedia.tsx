@@ -15,6 +15,7 @@ export default function ProjectMedia({
   priority = false,
   className = "",
   fit = "cover",
+  label,
 }: {
   media: MediaRow;
   sizes: string;
@@ -22,17 +23,25 @@ export default function ProjectMedia({
   className?: string;
   /** "contain" letterboxes instead of cropping — for a gallery item capped by max-height. */
   fit?: "cover" | "contain";
+  /** Describes the item when it has no title of its own (the admin's "Title" field is its alt text). */
+  label?: string;
 }) {
   const src = mediaUrl(media.path);
   const fitClass = fit === "contain" ? "object-contain" : "object-cover";
 
   if (media.kind === "video") {
-    return <VideoPlayer src={src} className={className} fit={fit} autoplay={media.autoplay} />;
+    return <VideoPlayer
+        src={src}
+        className={className}
+        fit={fit}
+        autoplay={media.autoplay}
+        label={media.alt || label}
+      />;
   }
   return (
     <Image
       src={src}
-      alt={media.alt ?? ""}
+      alt={media.alt || label || ""}
       fill
       sizes={sizes}
       priority={priority}

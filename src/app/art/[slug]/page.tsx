@@ -91,7 +91,11 @@ export default async function ArtProjectPage(props: PageProps<"/art/[slug]">) {
         </section>
       )}
 
-      <ProjectGallery sections={project.sections} coverId={project.cover?.id ?? null} />
+      <ProjectGallery
+        sections={project.sections}
+        coverId={project.cover?.id ?? null}
+        title={project.title}
+      />
 
       {next && (
         <section className="border-t border-border px-page-capped py-(--space-2)">

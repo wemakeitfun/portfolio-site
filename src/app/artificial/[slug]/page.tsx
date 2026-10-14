@@ -91,7 +91,11 @@ export default async function ArtificialProjectPage(props: PageProps<"/artificia
         </section>
       )}
 
-      <ProjectGallery sections={project.sections} coverId={project.cover?.id ?? null} />
+      <ProjectGallery
+        sections={project.sections}
+        coverId={project.cover?.id ?? null}
+        title={project.title}
+      />
 
       {next && (
         <section className="border-t border-border px-page-capped py-(--space-2)">

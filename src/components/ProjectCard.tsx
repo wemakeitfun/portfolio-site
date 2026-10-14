@@ -34,6 +34,7 @@ export default function ProjectCard({
                 media={project.cover}
                 sizes="(min-width: 768px) 50vw, 100vw"
                 priority={index < 2}
+                label={project.title}
               />
             </div>
           ) : (

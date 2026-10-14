@@ -135,12 +135,15 @@ export default function VideoPlayer({
   className = "",
   fit = "cover",
   autoplay = false,
+  label,
 }: {
   src: string;
   className?: string;
   fit?: "cover" | "contain";
   /** Plays muted and looping while at least ~40% on screen; pauses when scrolled away. */
   autoplay?: boolean;
+  /** Accessible name for the video. */
+  label?: string;
 }) {
   const fitClass = fit === "contain" ? "object-contain" : "object-cover";
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -213,6 +216,7 @@ export default function VideoPlayer({
       <video
         ref={videoRef}
         src={src}
+        aria-label={label}
         loop={autoplay}
         muted={autoplay}
         playsInline

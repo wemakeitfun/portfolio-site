@@ -22,9 +22,12 @@ import MojoCarousel from "./mojo-carousel/MojoCarousel";
 export default function ProjectGallery({
   sections,
   coverId,
+  title,
 }: {
   sections: MediaSection[];
   coverId: string | null;
+  /** The page's name, used to describe images that have no title of their own. */
+  title?: string;
 }) {
   const isDecks = (s: MediaSection) => s.type === "media" && s.style === "decks";
   const decks: DeckItem[] = sections.filter(isDecks).flatMap((s) =>
@@ -113,6 +116,7 @@ export default function ProjectGallery({
                     items={section.media}
                     sizes="(min-width: 768px) 90vw, 100vw"
                     widthPercent={section.width_percent}
+                    title={title}
                   />
                 );
                 return i === 0 ? slideshow : <Reveal>{slideshow}</Reveal>;
@@ -141,6 +145,11 @@ export default function ProjectGallery({
                       media={m}
                       sizes={`(min-width: 768px) ${Math.round((90 * section.width_percent) / 100 / section.columns)}vw, 100vw`}
                       priority={i === 0 && j === 0}
+                      label={
+                        title
+                          ? `${title} — ${m.kind === "video" ? "video" : "image"} ${j + 1}${section.media.length > 1 ? ` of ${section.media.length}` : ""}`
+                          : undefined
+                      }
                       fit="contain"
                     />
                   </div>

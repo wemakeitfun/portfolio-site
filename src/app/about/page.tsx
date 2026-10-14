@@ -73,7 +73,7 @@ export default async function AboutPage() {
   if (about.sections.length > 0) {
     blocks.sections = (
       <div className="pt-24 md:pt-32">
-        <ProjectGallery sections={about.sections} coverId={null} />
+        <ProjectGallery sections={about.sections} coverId={null} title="Adam Kahn" />
       </div>
     );
   }

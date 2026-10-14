@@ -24,10 +24,13 @@ export default function MediaSlideshow({
   items,
   sizes,
   widthPercent = 100,
+  title,
 }: {
   items: MediaRow[];
   sizes: string;
   widthPercent?: 25 | 50 | 75 | 100;
+  /** Names the slides that have no title of their own ("<title> — image 2 of 5"). */
+  title?: string;
 }) {
   const [index, setIndex] = useState(0);
 
@@ -45,6 +48,9 @@ export default function MediaSlideshow({
 
   if (items.length === 0) return null;
   const current = items[index];
+  const slideLabel = title
+    ? `${title} — ${current.kind === "video" ? "video" : "image"} ${index + 1} of ${items.length}`
+    : undefined;
   const frame = items[0];
 
   function advance() {
@@ -90,11 +96,11 @@ export default function MediaSlideshow({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={mediaUrl(current.path)}
-              alt={current.alt ?? ""}
+              alt={current.alt || slideLabel}
               className="absolute inset-0 h-full w-full object-contain"
             />
           ) : (
-            <ProjectMedia media={current} sizes={sizes} fit="contain" />
+            <ProjectMedia media={current} sizes={sizes} fit="contain" label={slideLabel} />
           )}
         </div>
 
