@@ -5,7 +5,8 @@ import Timeline from "@/components/Timeline";
 import TreatmentSmear from "@/components/TreatmentSmear";
 import RevealHeading from "@/components/RevealHeading";
 import { getAboutPage, type ContentBlockKey } from "@/lib/about";
-import { pageMetadata, trimDescription } from "@/lib/seo";
+import { aboutJsonLd, pageMetadata, trimDescription } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
 
 // Edits from the admin show up within a minute.
 export const revalidate = 60;
@@ -84,6 +85,7 @@ export default async function AboutPage() {
 
   return (
     <div>
+      <JsonLd data={aboutJsonLd()} />
       <TreatmentSmear images={ABOUT_TREATMENT_IMAGES} alt="About Me" />
 
       <section className="px-page pt-(--space-2) pb-(--space-2)">

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getNextProject, getProject, getSlugs } from "@/lib/portfolio";
 import { isLightColor, projectBackgroundStyle } from "@/lib/media";
-import { projectMetadata } from "@/lib/seo";
+import { projectJsonLd, projectMetadata } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
 import ProjectThemeOverride from "@/components/ProjectThemeOverride";
 import RevealHeading from "@/components/RevealHeading";
 import ProjectGallery from "@/components/ProjectGallery";
@@ -29,6 +30,7 @@ export default async function GenerativeProjectPage(props: PageProps<"/generativ
 
   return (
     <div className="pt-32" style={projectBackgroundStyle(project.background_color)}>
+      <JsonLd data={projectJsonLd(project)} />
       <ProjectThemeOverride isLight={project.background_color ? isLightColor(project.background_color) : null} />
       <section className="px-page-capped pb-(--space-2)">
         <Link

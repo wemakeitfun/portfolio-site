@@ -3,6 +3,8 @@ import PortraitReveal from "@/components/PortraitReveal";
 import WorkGrid from "@/components/WorkGrid";
 import Marquee from "@/components/Marquee";
 import Link from "next/link";
+import JsonLd from "@/components/JsonLd";
+import { homeJsonLd } from "@/lib/seo";
 
 export const metadata = { alternates: { canonical: "/" } };
 
@@ -30,6 +32,7 @@ const services = [
 export default function Home() {
   return (
     <>
+      <JsonLd data={homeJsonLd()} />
       <PortraitReveal
         base="/about/headshot.webp"
         reveal="/about/xray.webp"

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { mediaUrl, type Section } from "./media";
-import { getProject } from "./portfolio";
+import { getProject, type Project } from "./portfolio";
 
 export const SITE_URL = "https://kahncept.com";
 export const SITE_NAME = "Adam Kahn / Kahncept";
@@ -54,20 +54,123 @@ export function pageMetadata({
   };
 }
 
+/**
+ * The project's cover as a 1200px-wide image URL, or undefined when the cover can't make
+ * a good card (a video, an animated GIF, or a small thumbnail would preview badly or be
+ * rejected). Routed through the image optimizer so a huge upload still arrives at a sane size.
+ */
+export function projectImageUrl(project: Project): string | undefined {
+  const cover = project.cover;
+  const usable =
+    cover?.kind === "image" && !/\.gif$/i.test(cover.path) && (cover.width ?? Infinity) >= 600;
+  return usable
+    ? `${SITE_URL}/_next/image?url=${encodeURIComponent(mediaUrl(cover.path))}&w=1200&q=75`
+    : undefined;
+}
+
+// ---- Structured data (schema.org JSON-LD) ----
+
+const PERSON_ID = `${SITE_URL}/#person`;
+const WEBSITE_ID = `${SITE_URL}/#website`;
+
+/** Where each section's listing page lives, for breadcrumbs. */
+const SECTION_CRUMB: Record<Section, string> = {
+  work: "Work",
+  ads: "Ads",
+  art: "Art",
+  artificial: "AI",
+  generative: "Generative",
+};
+
+export function personJsonLd(): Record<string, unknown> {
+  return {
+    "@type": "Person",
+    "@id": PERSON_ID,
+    name: "Adam Kahn",
+    alternateName: "Kahncept",
+    url: SITE_URL,
+    image: `${SITE_URL}/about/headshot.webp`,
+    jobTitle: "Creative Director",
+    description: HOME_DESCRIPTION,
+    sameAs: ["https://instagram.com/kahncept", "https://linkedin.com/in/kahncept"],
+  };
+}
+
+export function websiteJsonLd(): Record<string, unknown> {
+  return {
+    "@type": "WebSite",
+    "@id": WEBSITE_ID,
+    name: SITE_NAME,
+    url: SITE_URL,
+    publisher: { "@id": PERSON_ID },
+  };
+}
+
+/** Homepage: who the site belongs to, and the site itself. */
+export function homeJsonLd(): Record<string, unknown> {
+  return { "@context": "https://schema.org", "@graph": [personJsonLd(), websiteJsonLd()] };
+}
+
+/** About page: a profile page whose subject is the person. */
+export function aboutJsonLd(): Record<string, unknown> {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    "@id": `${SITE_URL}/about#page`,
+    url: `${SITE_URL}/about`,
+    name: `About | ${SITE_NAME}`,
+    isPartOf: { "@id": WEBSITE_ID },
+    mainEntity: personJsonLd(),
+  };
+}
+
+/** A project page: the work itself, plus where it sits in the site. */
+export function projectJsonLd(project: Project): Record<string, unknown> {
+  const url = `${SITE_URL}/${project.section}/${project.slug}`;
+  const description =
+    trimDescription(project.summary) ?? trimDescription(project.description);
+  const year = project.year && /^\d{4}$/.test(project.year) ? project.year : undefined;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CreativeWork",
+        "@id": `${url}#work`,
+        name: project.title,
+        url,
+        ...(description && { description }),
+        image: projectImageUrl(project) ?? `${SITE_URL}${DEFAULT_OG_IMAGE}`,
+        creator: { "@id": PERSON_ID },
+        isPartOf: { "@id": WEBSITE_ID },
+        ...(year && { dateCreated: year }),
+        ...(project.category && { genre: project.category }),
+        ...(project.services.length > 0 && { keywords: project.services.join(", ") }),
+        ...(project.client && { mentions: { "@type": "Organization", name: project.client } }),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: SECTION_CRUMB[project.section],
+            item: `${SITE_URL}/${project.section}`,
+          },
+          { "@type": "ListItem", position: 3, name: project.title, item: url },
+        ],
+      },
+      personJsonLd(),
+    ],
+  };
+}
+
 /** A project page's metadata, from the same fields that fill the page. */
 export async function projectMetadata(section: Section, slug: string): Promise<Metadata> {
   const project = await getProject(slug);
   if (!project || project.section !== section) return {};
 
-  // A share card needs a decent static image: a video, an animated GIF, or a small
-  // thumbnail would preview badly (or be rejected), so those fall back to the site's.
-  // Routed through the image optimizer so a huge upload still arrives at a sane size.
-  const cover = project.cover;
-  const usableCover =
-    cover?.kind === "image" && !/\.gif$/i.test(cover.path) && (cover.width ?? Infinity) >= 600;
-  const image = usableCover
-    ? `${SITE_URL}/_next/image?url=${encodeURIComponent(mediaUrl(cover.path))}&w=1200&q=75`
-    : undefined;
+  const image = projectImageUrl(project);
 
   // A one-word summary or "coming soon" makes a poor search snippet; write a plain
   // sentence from the project's own fields instead.
