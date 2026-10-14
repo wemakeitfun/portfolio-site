@@ -1,8 +1,16 @@
 import RevealHeading from "@/components/RevealHeading";
 import WorkGrid from "@/components/WorkGrid";
+import { listingMetadata } from "@/lib/seo";
 
 // New uploads show up within a minute of publishing.
 export const revalidate = 60;
+
+export const generateMetadata = () =>
+  listingMetadata("work", {
+    title: "Work",
+    description: "Selected products, brands, and interfaces by Adam Kahn / Kahncept.",
+    path: "/work",
+  });
 
 export default function WorkPage() {
   return (
@@ -18,8 +26,7 @@ export default function WorkPage() {
           Selected projects
         </RevealHeading>
         <p className="mt-6 max-w-md text-fg-muted">
-          A handful of the products, brands, and interfaces we&apos;ve shipped
-          over the last few years.
+          Selected products, brands, and interfaces.
         </p>
       </section>
 

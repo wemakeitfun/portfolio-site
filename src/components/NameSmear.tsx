@@ -8,16 +8,20 @@ const anton = Anton({ subsets: ["latin"], weight: "400" });
 
 /**
  * Full-screen name that smears under the cursor and settles back.
- * The <h1> is the real text: it's what screen readers get, and what everyone sees
- * if WebGL is unavailable or the user prefers reduced motion.
+ * The text element is the real text: it's what screen readers get, and what everyone
+ * sees if WebGL is unavailable or the user prefers reduced motion. It's an <h1> unless
+ * the page has its own title further down (pass as="p" so there's only one).
  */
 export default function NameSmear({
   text = "Adam Kahn",
   ink,
   paper,
   treatments,
+  as: Tag = "h1",
 }: {
   text?: string;
+  /** Element for the text. Use "p" when the page's own heading is its <h1>. */
+  as?: "h1" | "p";
   /** CSS colors. Default to the site's --accent and --bg. */
   ink?: string;
   paper?: string;
@@ -68,11 +72,11 @@ export default function NameSmear({
         aria-hidden
         className="absolute inset-0 h-full w-full touch-pan-y"
       />
-      <h1
+      <Tag
         className={`${anton.className} absolute inset-0 grid place-items-center text-center text-[19vw] uppercase leading-none text-accent group-data-[ready=true]:sr-only`}
       >
         {text}
-      </h1>
+      </Tag>
     </section>
   );
 }

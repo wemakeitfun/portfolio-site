@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { mediaUrl, type Section } from "./media";
-import { getProject, type Project } from "./portfolio";
+import { getProject, getProjects, type Project } from "./portfolio";
 
 export const SITE_URL = "https://kahncept.com";
 export const SITE_NAME = "Adam Kahn / Kahncept";
@@ -52,6 +52,20 @@ export function pageMetadata({
     },
     twitter: { card: "summary_large_image", title: fullTitle, description, images },
   };
+}
+
+/**
+ * A section listing page's metadata. While the section has no published projects the page
+ * is just an "on the way" message, so it's kept out of search; that switches off by itself
+ * once something is published there.
+ */
+export async function listingMetadata(
+  section: Section,
+  meta: { title: string; description: string; path: string },
+): Promise<Metadata> {
+  const base = pageMetadata(meta);
+  const hasProjects = (await getProjects(section, 1)).length > 0;
+  return hasProjects ? base : { ...base, robots: { index: false, follow: true } };
 }
 
 /**

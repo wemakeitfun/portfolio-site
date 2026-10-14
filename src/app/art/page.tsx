@@ -19,7 +19,7 @@ export default function ArtPage() {
       {/* paper is given explicitly (not left to auto-detect --bg) so it's always
           white here regardless of exactly when the light theme class lands relative
           to this mounting — see RouteTheme.tsx for how that class gets set. */}
-      <NameSmear text="Kahncept" ink="#ff004e" paper="#ffffff" />
+      <NameSmear text="Kahncept" ink="#ff004e" paper="#ffffff" as="p" />
 
       <div className="pt-32">
         <section className="px-page pb-(--space-2)">
