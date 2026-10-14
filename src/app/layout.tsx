@@ -3,6 +3,7 @@ import { Bebas_Neue, Inter, JetBrains_Mono } from "next/font/google";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import CustomCursor from "@/components/CustomCursor";
+import KonamiGlitch from "@/components/KonamiGlitch";
 import RouteTheme from "@/components/RouteTheme";
 import { HOME_DESCRIPTION, HOME_TITLE, SITE_NAME, SITE_URL } from "@/lib/seo";
 import "./globals.css";
@@ -72,6 +73,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </noscript>
         <RouteTheme />
         <CustomCursor />
+        <KonamiGlitch />
         <Nav />
         <main className="flex-1">{children}</main>
         <Footer />

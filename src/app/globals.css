@@ -57,6 +57,48 @@
   padding-inline: max(var(--gutter), calc((100% - var(--content-max)) / 2));
 }
 
+/* Konami easter egg (components/KonamiGlitch.tsx): swaps the colour tokens for a hot-pink
+   ground. Doubled selector so it also beats the Art section's light theme. */
+html.konami,
+html.konami.theme-light {
+  --bg: #ff004e;
+  --bg-elevated: #e0003f;
+  --fg: #0a0a0b;
+  --fg-muted: rgba(10, 10, 11, 0.65);
+  --accent: #d7ff3f;
+  --border: rgba(10, 10, 11, 0.3);
+  color-scheme: dark;
+}
+html.konami body {
+  font-family: var(--font-jetbrains), monospace;
+}
+.konami-scan {
+  background: repeating-linear-gradient(to bottom, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px);
+}
+.konami-dot {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  mix-blend-mode: difference;
+  animation: konami-fade 520ms steps(5) forwards;
+}
+@keyframes konami-fade {
+  to {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+}
+@keyframes konami-split {
+  0%, 100% { text-shadow: 3px 0 #00ffff, -3px 0 #d7ff3f; }
+  50% { text-shadow: -3px 0 #00ffff, 3px 0 #d7ff3f; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  html.konami h1,
+  html.konami h2 {
+    animation: konami-split 700ms steps(2) infinite;
+  }
+}
+
 /* Scroll fade for gallery items (see components/Reveal.tsx). */
 .reveal {
   opacity: 0;
