@@ -5,6 +5,7 @@ import MediaSlideshow from "./MediaSlideshow";
 import Reveal from "./Reveal";
 import DeckRack, { type DeckItem } from "./deck-rack/DeckRack";
 import MojoCarousel from "./mojo-carousel/MojoCarousel";
+import RecordStorePlayer from "./record-store/RecordStorePlayer";
 
 /**
  * Renders every one of a project's sections, in order — each as its own
@@ -18,6 +19,9 @@ import MojoCarousel from "./mojo-carousel/MojoCarousel";
  *
  * A "3D Mojo Carousel" section renders the Mojo tin carousel. Its packs are built in,
  * so it shows even with no media, and only the first such section is used.
+ *
+ * A "Record Store" section plays its videos in order in the animated scene, each title
+ * coming from the video's title field. Images in the section are ignored.
  */
 export default function ProjectGallery({
   sections,
@@ -103,6 +107,23 @@ export default function ProjectGallery({
             <div key={section.id} className={pad}>
               <MojoCarousel />
             </div>
+          );
+        }
+
+        if (section.style === "record-store") {
+          const tracks = section.media
+            .filter((m) => m.kind === "video")
+            .map((m, n) => ({
+              id: m.id,
+              src: mediaUrl(m.path),
+              title: m.alt ?? `Track ${n + 1}`,
+            }));
+          if (tracks.length === 0) return null;
+          return (
+            <section key={section.id} className={`px-page-capped ${pad}`}>
+              {label}
+              <RecordStorePlayer tracks={tracks} />
+            </section>
           );
         }
 
