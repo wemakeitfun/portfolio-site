@@ -373,7 +373,7 @@ export default function RecordStorePlayer({ tracks }: { tracks: StoreTrack[] }) 
             onDurationChange={(event) => setDuration(event.currentTarget.duration || 0)}
             onEnded={adEnded}
             onTimeUpdate={(event) => {
-              if (needleDownRef.current) setPosition(event.currentTarget.currentTime);
+              if (playing !== null) setPosition(event.currentTarget.currentTime);
             }}
             playsInline
             preload="metadata"
