@@ -11,8 +11,8 @@ const CLIPS: { name: Clip; loop: boolean; speed: number }[] = [
   { name: "walk", loop: false, speed: 1.75 },
   { name: "needle", loop: false, speed: 1.75 },
   { name: "listen", loop: true, speed: 1 },
-  { name: "flip-up", loop: false, speed: 1.75 },
-  { name: "flip-down", loop: false, speed: 1.75 },
+  { name: "flip-up", loop: false, speed: 3 },
+  { name: "flip-down", loop: false, speed: 3 },
 ];
 
 // How far into each clip the needle reaches the record, which is when the sound starts.
@@ -20,6 +20,7 @@ const CLIPS: { name: Clip; loop: boolean; speed: number }[] = [
 const NEEDLE_SECONDS: Partial<Record<Clip, number>> = { needle: 2.3, "flip-down": 3 };
 // The record turns over in the first moments of flip-down, too fast to read at full speed.
 const FLIP_TURN_SECONDS = 0.9;
+const FLIP_TURN_SPEED = 1.5;
 // Clips join on the same pose but not the same pixels, so a short fade hides the difference.
 const FADE_MS = 150;
 
@@ -177,7 +178,7 @@ export default function RecordStorePlayer({ tracks }: { tracks: StoreTrack[] }) 
     restartRef.current = false;
     next.currentTime = 0;
     const speed = CLIPS.find((clip) => clip.name === name)?.speed ?? 1;
-    next.playbackRate = name === "flip-down" ? 1 : speed;
+    next.playbackRate = name === "flip-down" ? FLIP_TURN_SPEED : speed;
     layerRef.current += 1;
     next.style.zIndex = String(layerRef.current);
     next.style.opacity = "1";
