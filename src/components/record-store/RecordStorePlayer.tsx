@@ -4,19 +4,22 @@ import { useEffect, useRef, useState } from "react";
 
 export type StoreTrack = { id: string; src: string; title: string };
 
-type Clip = "browse" | "walk" | "needle" | "listen" | "swap";
+type Clip = "browse" | "walk" | "needle" | "listen" | "flip-up" | "flip-down";
 
 const CLIPS: { name: Clip; loop: boolean; speed: number }[] = [
   { name: "browse", loop: true, speed: 1 },
   { name: "walk", loop: false, speed: 1.75 },
   { name: "needle", loop: false, speed: 1.75 },
   { name: "listen", loop: true, speed: 1 },
-  { name: "swap", loop: false, speed: 1.5 },
+  { name: "flip-up", loop: false, speed: 1.75 },
+  { name: "flip-down", loop: false, speed: 1.75 },
 ];
 
 // How far into each clip the needle reaches the record, which is when the sound starts.
 // These are positions in the clip itself, so they hold at any playback speed.
-const NEEDLE_SECONDS: Partial<Record<Clip, number>> = { needle: 2.3, swap: 4 };
+const NEEDLE_SECONDS: Partial<Record<Clip, number>> = { needle: 2.3, "flip-down": 3 };
+// The record turns over in the first moments of flip-down, too fast to read at full speed.
+const FLIP_TURN_SECONDS = 0.9;
 // Clips join on the same pose but not the same pixels, so a short fade hides the difference.
 const FADE_MS = 150;
 
@@ -173,7 +176,8 @@ export default function RecordStorePlayer({ tracks }: { tracks: StoreTrack[] }) 
     needleDownRef.current = false;
     restartRef.current = false;
     next.currentTime = 0;
-    next.playbackRate = CLIPS.find((clip) => clip.name === name)?.speed ?? 1;
+    const speed = CLIPS.find((clip) => clip.name === name)?.speed ?? 1;
+    next.playbackRate = name === "flip-down" ? 1 : speed;
     layerRef.current += 1;
     next.style.zIndex = String(layerRef.current);
     next.style.opacity = "1";
@@ -182,6 +186,7 @@ export default function RecordStorePlayer({ tracks }: { tracks: StoreTrack[] }) 
     if (NEEDLE_SECONDS[name] !== undefined) {
       const watch = () => {
         if (clipRef.current !== name || needleDownRef.current || restartRef.current) return;
+        if (next.currentTime >= FLIP_TURN_SECONDS) next.playbackRate = speed;
         clipTime(name, next.currentTime);
         requestAnimationFrame(watch);
       };
@@ -261,9 +266,9 @@ export default function RecordStorePlayer({ tracks }: { tracks: StoreTrack[] }) 
     } else if (clipRef.current === "browse") {
       playClip("walk");
     } else if (clipRef.current === "listen") {
-      playClip("swap");
+      playClip("flip-up");
     } else if (needleDownRef.current) {
-      // The needle is already down on the previous pick, so this one needs its own swap.
+      // The needle is already down on the previous pick, so this one needs its own flip.
       needleDownRef.current = false;
       restartRef.current = true;
     }
@@ -271,7 +276,8 @@ export default function RecordStorePlayer({ tracks }: { tracks: StoreTrack[] }) 
 
   function clipEnded(name: Clip) {
     if (name === "walk") playClip("needle");
-    else if (restartRef.current) playClip("swap");
+    else if (name === "flip-up") playClip("flip-down");
+    else if (restartRef.current) playClip("flip-up");
     else playClip("listen");
   }
 
